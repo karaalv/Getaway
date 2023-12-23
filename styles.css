@@ -1,0 +1,44 @@
+/* Separate file used to store HTML styles. */
+
+/* Styles used to cover entire window */
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Styles for menu button container. */
+#Menu-button-container {
+    background-color: transparent;
+    height: fit-content;
+    width: fit-content;
+    border-bottom: 2px solid black;
+    z-index: 1;
+    position: absolute;
+    top: 5%;
+    right: 5%;
+}
+
+/* Set Opacity when clicked. */
+#Menu-container:active{
+    opacity: 0.5;
+}
+
+/* Styles used for menu button. */
+#Menu-button{
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+}
+
+/* Styles used for game menu section.*/
+#Game-menu{
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+    opacity: 0.6;
+    z-index: 1;
+    background-color: transparent;
+}
+
