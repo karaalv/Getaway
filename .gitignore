@@ -1,0 +1,3 @@
+# Git ignore file used to manage workspace.
+
+node_modules/
