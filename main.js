@@ -146,7 +146,7 @@ function initialiseLevel1(){
     const playerGeometry = new THREE.BoxGeometry(2, 1, 3);
     const playerMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff } );
     let playerObject = new THREE.Mesh(playerGeometry, playerMaterial);
-    playerObject.position.set(-1.5, 0, 0)
+    playerObject.position.set(1.5, 0, 0)
 
     player_Global = playerObject;
     scene.add(playerObject);
@@ -155,7 +155,7 @@ function initialiseLevel1(){
     const enemyGeometry = new THREE.BoxGeometry(2, 1, 3);
     const enemyMaterial = new THREE.MeshBasicMaterial( {color: 0x000000 } );
     let enemyObject = new THREE.Mesh(enemyGeometry, enemyMaterial);
-    enemyObject.position.set(-1.5, 0, 5)
+    enemyObject.position.set(1.5, 0, 5)
     
     enemy_Global = enemyObject;
     scene.add(enemyObject);

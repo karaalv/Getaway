@@ -5,6 +5,12 @@
 import * as THREE from 'three';
 
 
+/**
+ * Function used to generate NPC objects.
+ * @param positionProbability 
+ * @param playerPositionZ 
+ * @returns NPC Mesh
+ */
 export function generateNPC(positionProbability, playerPositionZ){
     // Define NPC object.
     const object = new THREE.BoxGeometry(2, 1, 3);
@@ -19,10 +25,10 @@ export function generateNPC(positionProbability, playerPositionZ){
     let randomZ;
 
     if(positionProbability > 0){
+        randomX = -1.5
+    } else {
         randomX = 1.5
         speed *= -1;
-    } else {
-        randomX = -1.5
     }
 
     /**
