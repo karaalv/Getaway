@@ -4,6 +4,9 @@
  */
 import * as THREE from 'three';
 
+// NPC properties.
+const npcObject = new THREE.BoxGeometry(2, 1, 3);
+const npcMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
 
 /**
  * Function used to generate NPC objects.
@@ -13,9 +16,8 @@ import * as THREE from 'three';
  */
 export function generateNPC(positionProbability, playerPositionZ){
     // Define NPC object.
-    const object = new THREE.BoxGeometry(2, 1, 3);
-    const material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
-    let objectMesh = new THREE.Mesh(object,  material);
+
+    let objectMesh = new THREE.Mesh(npcObject,  npcMaterial);
 
     // NPC speed - Random variable.
     let speed = Math.floor(Math.random() * 5) + 20;

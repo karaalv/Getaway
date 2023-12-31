@@ -56,8 +56,16 @@ function keyDown(event){
     keyStates[event.code] = true;
 
     // Pause game.
-    if (keyStates['KeyP']){
-        gameActive = false;
+    if(event.code == 'KeyP'){
+        gameActive = !gameActive;
+        if(gameActive){
+            animate();
+        }
+    }
+
+    // Toggle camera perspective.
+    if(event.code == 'KeyC'){
+        firstPerson = !firstPerson;
     }
 }
 //
@@ -124,8 +132,10 @@ const cameraVelocity = gameVelocity;
 // NPC behaviour.
 const spawnRate = 120;
 const positionFrequency = 0.75;
-
 const npcArray = [];
+
+// Perspective.
+let firstPerson = false;
 
 /*** LEVEL INITIALISATION ***/
 
@@ -160,13 +170,32 @@ function initialiseLevel1(){
     enemy_Global = enemyObject;
     scene.add(enemyObject);
 
-    // Define floor plane.
+    // Define road plane.
     const floorGeometry = new THREE.PlaneGeometry(8, 1000);
     const floorMaterial = new THREE.MeshBasicMaterial({color: 0xF88379, side: THREE.DoubleSide});
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotateX(Math.PI / 2);
     floor.position.set(0, -1, 0);
     scene.add(floor);
+
+    // Define sidewalk planes.
+    const sideWalkGeometry = new THREE.BoxGeometry(1, 1000, 1.5);
+    const sidewalkMaterial = new THREE.MeshBasicMaterial({color: 0xA0A0A0, side: THREE.DoubleSide});
+    const sidewalkLeft = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
+    const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
+
+
+    // Left sidewalk.
+    sidewalkLeft.rotateX(Math.PI / 2);
+    sidewalkLeft.position.set(-4.5, -1, 0)
+    scene.add(sidewalkLeft);
+
+    // Right sidewalk.
+    sidewalkRight.rotateX(Math.PI / 2);
+    sidewalkRight.position.set(4.5, -1, 0)
+    scene.add(sidewalkRight);
+
+
 
     scene_Global = scene;
     camera_Global = camera;
@@ -197,18 +226,39 @@ function animate(){
 
     /* Player Movement */
 
-    // Move right.
-    if (keyStates['KeyA']){
-        player_Global.position.x -= playerSpeed * delta;
-    }
     // Move left.
-    if (keyStates['KeyD']){ 
-        player_Global.position.x += playerSpeed * delta;
+    if(keyStates['KeyA']){
+        // Define player boundary.
+        if(player_Global.position.x > -2.5){
+            player_Global.position.x -= playerSpeed * delta;
+        }
+    }
+    // Move right.
+    if(keyStates['KeyD']){ 
+        // Define player boundary.
+        if(player_Global.position.x < 2.5){
+            player_Global.position.x += playerSpeed * delta;
+        }
     }
 
-    // Constant forward motion.
+    // Forward player movement.
     player_Global.position.z -= gameVelocity * delta;
-    camera_Global.position.z -= cameraVelocity * delta;
+
+    /* Camera Control */
+
+    if(firstPerson){
+        // First person properties.
+        camera_Global.position.z = player_Global.position.z;
+        camera_Global.position.x = player_Global.position.x;
+        camera_Global.position.y = 1;
+    } else {
+        // Third person properties.
+        camera_Global.position.y = 5;
+        camera_Global.position.x = 0;
+        camera_Global.position.z = player_Global.position.z + 12;
+    }
+
+
     // console.log(player_Global.position.z)
 
 
@@ -219,10 +269,8 @@ function animate(){
         populateLevel();
     }
 
-
     // Update NPC positions.
-    moveEnvironment(delta, player_Global.position.x);
-
+    updateEnvironment(delta, player_Global.position.x, player_Global.position.z);
 
     requestAnimationFrame(animate);
     renderer.render(scene_Global, camera_Global);
@@ -239,7 +287,13 @@ function animate(){
  * @param delta 
  * @param playerPositionX 
  */
-function moveEnvironment(delta, playerPositionX){
+function updateEnvironment(delta, playerPositionX, playerPositionZ){
+    // Relative clipping zones.
+    const frontClipping = playerPositionZ - 150;
+    const backClipping = playerPositionZ + 50;
+
+    /* Enemy object */
+
     // Enemy forward motion.
     enemy_Global.position.z -= (gameVelocity) * delta;
     
@@ -253,8 +307,21 @@ function moveEnvironment(delta, playerPositionX){
         }
     }
 
+    /* NPC objects*/
+
     // NPC movement.
     for(let npc of npcArray){
+
+        // Check if npc is within clipping area.
+        if(npc.object.position.z > backClipping){
+            scene_Global.remove(npc.object);
+
+        } else if (npc.object.position.z < frontClipping){
+            scene_Global.remove(npc.object);
+        }
+
+        
+
         npc.object.position.z -= npc.speed * delta
     }
 }
@@ -263,11 +330,12 @@ function moveEnvironment(delta, playerPositionX){
  * Callback used to add NPC objects to scene.
  */
 function populateLevel(){
+
+    // Compute position of NPC.
     const positionProbability = Math.round(Math.sin(positionFrequency * gameTimer));
-    console.log(positionProbability);
-    console.log('generate');
     let npc;
 
+    // Instantiate NPC, add NPC to scene.
     npc = generateNPC(positionProbability, player_Global.position.z);
     scene_Global.add(npc.object);
     npcArray.push(npc);
