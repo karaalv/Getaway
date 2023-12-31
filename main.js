@@ -75,14 +75,14 @@ function keyUp(event){
 
 /*** WINDOW LISTENERS ***/ 
 
-// // Toggle game menu listener.
-// gameMenuButton.addEventListener('click', () => {
-//     if(gameActive){
-//         activateMenu();
-//     } else {
-//         deactivateMenu();
-//     }
-// });
+// Toggle game menu listener.
+gameMenuButton.addEventListener('click', () => {
+    if(gameActive){
+        activateMenu();
+    } else {
+        deactivateMenu();
+    }
+});
 
 // Keyboard input listener.
 window.addEventListener('keydown', keyDown);
@@ -108,10 +108,11 @@ let camera_Global;
 
 // Global player object.
 let player_Global;
+let playerBB;
 
 // Global enemy object.
 let enemy_Global;
-
+let enemyBB;
 
 // Camera properties.
 const fov = 75;
@@ -127,7 +128,6 @@ let gameTimer = 0;
 // Speed.
 const playerSpeed = 18.0;
 const gameVelocity = 7.0;
-const cameraVelocity = gameVelocity;
 
 // NPC behaviour.
 const spawnRate = 120;
@@ -156,7 +156,11 @@ function initialiseLevel1(){
     const playerGeometry = new THREE.BoxGeometry(2, 1, 3);
     const playerMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff } );
     let playerObject = new THREE.Mesh(playerGeometry, playerMaterial);
-    playerObject.position.set(1.5, 0, 0)
+    playerObject.position.set(1.5, 0, 0);
+
+    // Define bounding box.
+    playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    playerBB.setFromObject(playerObject);
 
     player_Global = playerObject;
     scene.add(playerObject);
@@ -165,7 +169,11 @@ function initialiseLevel1(){
     const enemyGeometry = new THREE.BoxGeometry(2, 1, 3);
     const enemyMaterial = new THREE.MeshBasicMaterial( {color: 0x000000 } );
     let enemyObject = new THREE.Mesh(enemyGeometry, enemyMaterial);
-    enemyObject.position.set(1.5, 0, 5)
+    enemyObject.position.set(1.5, 0, 5);
+
+    // Define bounding box.
+    enemyBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    enemyBB.setFromObject(enemyObject);
     
     enemy_Global = enemyObject;
     scene.add(enemyObject);
@@ -261,7 +269,6 @@ function animate(){
 
     // console.log(player_Global.position.z)
 
-
     /* Environment */
 
     // Add NPCs to level at defined spawn rate.
@@ -274,6 +281,13 @@ function animate(){
 
     requestAnimationFrame(animate);
     renderer.render(scene_Global, camera_Global);
+
+    /* Collisions */
+
+    // Update bonding box positions.
+    playerBB.copy(player_Global.geometry.boundingBox).applyMatrix4(player_Global.matrixWorld);
+    enemyBB.copy(enemy_Global.geometry.boundingBox).applyMatrix4(enemy_Global.matrixWorld);
+
 
     // Update game timer after each frame.
     gameTimer++;
@@ -288,9 +302,6 @@ function animate(){
  * @param playerPositionX 
  */
 function updateEnvironment(delta, playerPositionX, playerPositionZ){
-    // Relative clipping zones.
-    const frontClipping = playerPositionZ - 150;
-    const backClipping = playerPositionZ + 50;
 
     /* Enemy object */
 
@@ -308,22 +319,20 @@ function updateEnvironment(delta, playerPositionX, playerPositionZ){
     }
 
     /* NPC objects*/
-
-    // NPC movement.
     for(let npc of npcArray){
 
-        // Check if npc is within clipping area.
-        if(npc.object.position.z > backClipping){
-            scene_Global.remove(npc.object);
+        // NPC movement.
+        npc.object.position.z -= npc.speed * delta;
 
-        } else if (npc.object.position.z < frontClipping){
-            scene_Global.remove(npc.object);
+        // NPC collision.
+        npc.boundingBox.copy(npc.object.geometry.boundingBox).applyMatrix4(npc.object.matrixWorld);
+        if(playerBB.intersectsBox(npc.boundingBox)){
+            console.log('collision');
+            gameActive = false;
         }
 
-        
-
-        npc.object.position.z -= npc.speed * delta
     }
+
 }
 
 /**

@@ -15,9 +15,12 @@ const npcMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
  * @returns NPC Mesh
  */
 export function generateNPC(positionProbability, playerPositionZ){
+    
     // Define NPC object.
-
     let objectMesh = new THREE.Mesh(npcObject,  npcMaterial);
+
+    // Define bounding box.
+    let boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
     // NPC speed - Random variable.
     let speed = Math.floor(Math.random() * 5) + 20;
@@ -30,7 +33,7 @@ export function generateNPC(positionProbability, playerPositionZ){
         randomX = -1.5
     } else {
         randomX = 1.5
-        speed *= -1;
+        speed *= -1.8;
     }
 
     /**
@@ -44,12 +47,15 @@ export function generateNPC(positionProbability, playerPositionZ){
         randomZ = playerPositionZ + 50;
     }
 
-    objectMesh.position.set(randomX, 0, randomZ)
+    // Set NPC position.
+    objectMesh.position.set(randomX, 0, randomZ);
+    boundingBox.setFromObject(objectMesh);
 
     return (
         {
             object: objectMesh,
             speed: speed,
+            boundingBox: boundingBox
         }
     )
 

@@ -18,9 +18,9 @@ body {
     right: 5%;
 }
 
-/* Set Opacity when clicked. */
-#Menu-container:active{
-    opacity: 0.2;
+/* Set Opacity when hovering. */
+#Menu-button-container :hover{
+    opacity: 0.5;
 }
 
 /* Styles used for menu button. */
@@ -41,7 +41,7 @@ body {
     z-index: 2;
     position: absolute;
     top: 20%;
-    left: 50%;
+    left: 47%;
     background-color: transparent;
 }
 
