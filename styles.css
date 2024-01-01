@@ -11,7 +11,7 @@ body {
     background-color: transparent;
     height: fit-content;
     width: fit-content;
-    border-bottom: 2px solid black;
+    border-bottom: 2px solid white;
     z-index: 1;
     position: absolute;
     top: 5%;
@@ -31,6 +31,7 @@ body {
     border: none;
     background-color: transparent;
     cursor: pointer;
+    color: #f5f5f5
 }
 
 /* Styles used for game menu section.*/
@@ -43,6 +44,7 @@ body {
     top: 20%;
     left: 47%;
     background-color: transparent;
+    color: white;
 }
 
 

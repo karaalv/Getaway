@@ -109,10 +109,13 @@ let camera_Global;
 // Global player object.
 let player_Global;
 let playerBB;
+const playerHeadLights = [];
 
 // Global enemy object.
 let enemy_Global;
 let enemyBB;
+const enemyHeadLights = []
+
 
 // Camera properties.
 const fov = 75;
@@ -126,7 +129,7 @@ const far = 200;
 let gameTimer = 0;
 
 // Speed.
-const playerSpeed = 18.0;
+const playerSpeed = 15.0;
 const gameVelocity = 7.0;
 
 // NPC behaviour.
@@ -143,7 +146,11 @@ function initialiseLevel1(){
 
     // Define scene.
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xcccccc);
+    scene.background = new THREE.Color(0x000021);
+
+    // Lighting.
+    const ambientLight = new THREE.AmbientLight(0xE1E1FF, 1.5);
+    scene.add(ambientLight);
 
     // Define camera and camera position.
     const camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
@@ -152,9 +159,9 @@ function initialiseLevel1(){
     // Define renderer.
     renderer.setSize( window.innerWidth, window.innerHeight );
 
-    // Define player object.
+    /* Player */
     const playerGeometry = new THREE.BoxGeometry(2, 1, 3);
-    const playerMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff } );
+    const playerMaterial = new THREE.MeshPhongMaterial( {color: 0xFFFFFF } );
     let playerObject = new THREE.Mesh(playerGeometry, playerMaterial);
     playerObject.position.set(1.5, 0, 0);
 
@@ -162,25 +169,89 @@ function initialiseLevel1(){
     playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
     playerBB.setFromObject(playerObject);
 
+    // Define player headlights.
+    const playerLeftHeadlight = new THREE.SpotLight(0xFFFFA9, 6);
+    const playerRightHeadlight = new THREE.SpotLight(0xFFFFA9, 6);
+
+    playerLeftHeadlight.position.set(playerObject.position.x - 0.5, 0.5, playerObject.position.z - 3);
+    playerLeftHeadlight.angle = - Math.PI; 
+    playerRightHeadlight.position.set(playerObject.position.x + 0.5, 0.5, playerObject.position.z - 3);
+    playerRightHeadlight.angle = - Math.PI; 
+
+    playerHeadLights[0] = playerLeftHeadlight;
+    playerHeadLights[1] = playerRightHeadlight;
+
+
+    scene.add(playerLeftHeadlight);
+    scene.add(playerRightHeadlight);
+
+
     player_Global = playerObject;
     scene.add(playerObject);
 
-    // Define enemy object.
+    /* Enemy */
     const enemyGeometry = new THREE.BoxGeometry(2, 1, 3);
-    const enemyMaterial = new THREE.MeshBasicMaterial( {color: 0x000000 } );
+    const enemyMaterial = new THREE.MeshPhongMaterial( {color: 0x000000 } );
     let enemyObject = new THREE.Mesh(enemyGeometry, enemyMaterial);
-    enemyObject.position.set(1.5, 0, 5);
+    enemyObject.position.set(1.5, 0, 6);
 
     // Define bounding box.
     enemyBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
     enemyBB.setFromObject(enemyObject);
+
+    // Define headlights.
+    const enemyLeftHeadlight = new THREE.SpotLight(0xFFFFA9, 4);
+    const enemyRightHeadlight = new THREE.SpotLight(0xFFFFA9, 4);
+
+    enemyLeftHeadlight.position.set(enemyObject.position.x - 0.5, 0.5, enemyObject.position.z - 3);
+    enemyLeftHeadlight.angle = - Math.PI; 
+    enemyRightHeadlight.position.set(enemyObject.position.x + 0.5, 0.5, enemyObject.position.z - 3);
+    enemyRightHeadlight.angle = - Math.PI; 
+
+    enemyHeadLights[0] = enemyLeftHeadlight;
+    enemyHeadLights[1] = enemyRightHeadlight;
+
+    // Define sirens.
+    const capsuleGeometry = new THREE.CapsuleGeometry(0.1, 0.1, 10, 10);
+    capsuleGeometry.rotateZ(Math.PI/2)
+    const red = new THREE.MeshPhongMaterial({color: 0xFF0000});
+    const blue = new THREE.MeshPhongMaterial({color: 0x0000FF});
+
+
+    const redSiren = new THREE.SpotLight(0xFF0000, 70);
+    const redSirenObject = new THREE.Mesh(capsuleGeometry, red);
+
+    const blueSiren = new THREE.SpotLight(0x0000FF, 70);
+    const blueSirenObject = new THREE.Mesh(capsuleGeometry, blue);
+
+    redSirenObject.position.set(enemyObject.position.x - 0.5, 1, enemyObject.position.z);
+    redSiren.position.set(enemyObject.position.x - 0.5, 1.5, enemyObject.position.z);
+    redSiren.angle = - Math.PI; 
+
+    blueSirenObject.position.set(enemyObject.position.x + 0.5, 1, enemyObject.position.z);
+    blueSiren.position.set(enemyObject.position.x + 0.5, 1.5, enemyObject.position.z);
+    blueSiren.angle = - Math.PI; 
+
+    enemyHeadLights[2] = redSiren;
+    enemyHeadLights[3] = blueSiren;
+    
+    enemyHeadLights[4] = redSirenObject;
+    enemyHeadLights[5] = blueSirenObject
+
+    scene.add(enemyLeftHeadlight);
+    scene.add(enemyRightHeadlight);
+    scene.add(redSiren);
+    scene.add(blueSiren);
+    scene.add(redSirenObject);
+    scene.add(blueSirenObject);
+
     
     enemy_Global = enemyObject;
     scene.add(enemyObject);
 
     // Define road plane.
     const floorGeometry = new THREE.PlaneGeometry(8, 1000);
-    const floorMaterial = new THREE.MeshBasicMaterial({color: 0xF88379, side: THREE.DoubleSide});
+    const floorMaterial = new THREE.MeshPhongMaterial({color: 0xF88379, side: THREE.DoubleSide});
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotateX(Math.PI / 2);
     floor.position.set(0, -1, 0);
@@ -188,7 +259,7 @@ function initialiseLevel1(){
 
     // Define sidewalk planes.
     const sideWalkGeometry = new THREE.BoxGeometry(1, 1000, 1.5);
-    const sidewalkMaterial = new THREE.MeshBasicMaterial({color: 0xA0A0A0, side: THREE.DoubleSide});
+    const sidewalkMaterial = new THREE.MeshPhongMaterial({color: 0xA0A0A0, side: THREE.DoubleSide});
     const sidewalkLeft = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
     const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
 
@@ -252,13 +323,20 @@ function animate(){
     // Forward player movement.
     player_Global.position.z -= gameVelocity * delta;
 
+    // Update light positions.
+    playerHeadLights[0].position.z = player_Global.position.z - 3;
+    playerHeadLights[0].position.x = player_Global.position.x - 0.5;
+    playerHeadLights[1].position.z = player_Global.position.z - 3;
+    playerHeadLights[1].position.x = player_Global.position.x + 0.5;
+
+
     /* Camera Control */
 
     if(firstPerson){
         // First person properties.
         camera_Global.position.z = player_Global.position.z;
         camera_Global.position.x = player_Global.position.x;
-        camera_Global.position.y = 1;
+        camera_Global.position.y = 0.5;
     } else {
         // Third person properties.
         camera_Global.position.y = 5;
@@ -318,6 +396,25 @@ function updateEnvironment(delta, playerPositionX, playerPositionZ){
         }
     }
 
+    enemyHeadLights[0].position.z = enemy_Global.position.z - 3;
+    enemyHeadLights[0].position.x = enemy_Global.position.x - 0.5;
+
+    enemyHeadLights[1].position.z = enemy_Global.position.z - 3;
+    enemyHeadLights[1].position.x = enemy_Global.position.x + 0.5;
+
+    enemyHeadLights[2].position.z = enemy_Global.position.z - 1;
+    enemyHeadLights[2].position.x = enemy_Global.position.x - 0.5;
+
+    enemyHeadLights[3].position.z = enemy_Global.position.z - 1;
+    enemyHeadLights[3].position.x = enemy_Global.position.x + 0.5;
+
+
+    enemyHeadLights[4].position.z = enemy_Global.position.z;
+    enemyHeadLights[4].position.x = enemy_Global.position.x - 0.5;
+
+    enemyHeadLights[5].position.z = enemy_Global.position.z;
+    enemyHeadLights[5].position.x = enemy_Global.position.x + 0.5;
+
     /* NPC objects*/
     for(let npc of npcArray){
 
@@ -328,7 +425,7 @@ function updateEnvironment(delta, playerPositionX, playerPositionZ){
         npc.boundingBox.copy(npc.object.geometry.boundingBox).applyMatrix4(npc.object.matrixWorld);
         if(playerBB.intersectsBox(npc.boundingBox)){
             console.log('collision');
-            gameActive = false;
+            // gameActive = false;
         }
 
     }

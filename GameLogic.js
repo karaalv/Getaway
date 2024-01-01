@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 // NPC properties.
 const npcObject = new THREE.BoxGeometry(2, 1, 3);
-const npcMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+const npcMaterial = new THREE.MeshPhongMaterial( {color: 0xff0000} );
 
 /**
  * Function used to generate NPC objects.
