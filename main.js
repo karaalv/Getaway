@@ -120,12 +120,15 @@ const far = 200;
 
 /*** GAME PROPERTIES ***/
 
+// Game length.
+const GAME_LENGTH = 1000;
+
 // Time.
 let gameTimer = 0;
 
 // Speed.
 const playerSpeed = 15.0;
-const gameVelocity = 7.0;
+const gameVelocity = 8.0;
 
 // NPC behaviour.
 const spawnRate = 120;
@@ -134,6 +137,9 @@ const npcArray = [];
 
 // Perspective.
 let firstPerson = false;
+
+// Level completion.
+let levelCleared = false;
 
 /*** GAME AVATARS ***/
 
@@ -144,13 +150,11 @@ let enemyObject_Global;
 
 function initialiseLevel1(){
 
+    /* THREE JS Properties */
+
     // Define scene.
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000021);
-
-    // Lighting.
-    const ambientLight = new THREE.AmbientLight(0xE1E1FF, 1.5);
-    scene.add(ambientLight);
 
     // Define camera and camera position.
     const camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
@@ -158,6 +162,48 @@ function initialiseLevel1(){
 
     // Define renderer.
     renderer.setSize(window.innerWidth, window.innerHeight);
+
+    scene_Global = scene;
+    camera_Global = camera;
+
+    /* Level Features */
+
+    // Lighting.
+    const ambientLight = new THREE.AmbientLight(0xE1E1FF, 2.5);
+    scene.add(ambientLight);
+
+    // Define road plane.
+    const roadGeometry = new THREE.PlaneGeometry(8, 750);
+    const roadMaterial = new THREE.MeshPhongMaterial({color: 0xF88379, side: THREE.DoubleSide});
+    const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
+    roadMesh.rotateX(Math.PI / 2);
+    roadMesh.position.set(0, -1, -250);
+    scene.add(roadMesh);
+
+    // Define sidewalk planes.
+    const sideWalkGeometry = new THREE.BoxGeometry(1, 750, 1.5);
+    const sidewalkMaterial = new THREE.MeshPhongMaterial({color: 0xA0A0A0, side: THREE.DoubleSide});
+    const sidewalkLeft = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
+    const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
+
+    // Left sidewalk.
+    sidewalkLeft.rotateX(Math.PI / 2);
+    sidewalkLeft.position.set(-4.5, -1, -250)
+    scene.add(sidewalkLeft);
+
+    // Right sidewalk.
+    sidewalkRight.rotateX(Math.PI / 2);
+    sidewalkRight.position.set(4.5, -1, -250)
+    scene.add(sidewalkRight);
+
+    // Objective.
+    const goalGeometry = new THREE.PlaneGeometry(8, 2);
+    const goalMaterial = new THREE.MeshPhongMaterial({color: 0x00FF00, side: THREE.DoubleSide, opacity: 0.5, transparent: true});
+    const goalMesh = new THREE.Mesh(goalGeometry, goalMaterial);
+    goalMesh.position.set(0, 0, -500);
+    scene.add(goalMesh);
+
+    /* Avatars */
 
     /* Player - Generate and add to scene */
     const playerObject = generatePlayer();
@@ -179,36 +225,7 @@ function initialiseLevel1(){
     // Store in global variable
     enemyObject_Global = enemyObject;
 
-
-    // Define road plane.
-    const floorGeometry = new THREE.PlaneGeometry(8, 1000);
-    const floorMaterial = new THREE.MeshPhongMaterial({color: 0xF88379, side: THREE.DoubleSide});
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotateX(Math.PI / 2);
-    floor.position.set(0, -1, 0);
-    scene.add(floor);
-
-    // Define sidewalk planes.
-    const sideWalkGeometry = new THREE.BoxGeometry(1, 1000, 1.5);
-    const sidewalkMaterial = new THREE.MeshPhongMaterial({color: 0xA0A0A0, side: THREE.DoubleSide});
-    const sidewalkLeft = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
-    const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
-
-
-    // Left sidewalk.
-    sidewalkLeft.rotateX(Math.PI / 2);
-    sidewalkLeft.position.set(-4.5, -1, 0)
-    scene.add(sidewalkLeft);
-
-    // Right sidewalk.
-    sidewalkRight.rotateX(Math.PI / 2);
-    sidewalkRight.position.set(4.5, -1, 0)
-    scene.add(sidewalkRight);
-
-
-    scene_Global = scene;
-    camera_Global = camera;
-
+    // Call animation loop.
     animate();
 }
 
@@ -238,13 +255,15 @@ function animate(){
 
     /* Camera Control */
 
-    updatePersonPerspective({playerMesh: playerMesh});
+    updateCameraPerspective({playerMesh: playerMesh, delta: delta});
 
     /* Environment */
 
     // Add NPCs to level at defined spawn rate.
-    if(gameTimer % spawnRate == 0){
-        populateLevel({playerMesh: playerMesh});
+    if(levelCleared == false){
+        if(gameTimer % spawnRate == 0){
+            populateLevel({playerMesh: playerMesh});
+        }
     }
 
     // Update NPC positions.
@@ -260,26 +279,70 @@ function animate(){
 
 /*** ANIMATION CALLBACK FUNCTIONS ***/
 
+/**
+ * Callback used to update player position.
+ * @param playerMesh 
+ * @param delta 
+ */
+function updatePlayerPosition({playerMesh, delta}){
+    console.log(playerMesh.position.z)
+    // End level if goal reached.
+    if(playerMesh.position.z < -500){
+        levelCleared = true;
+    }
+
+    // Move left.
+    if(keyStates['KeyA']){
+        // Define player boundary.
+        if(playerMesh.position.x > -2.5){
+            playerMesh.position.x -= playerSpeed * delta;
+        }
+    }
+    // Move right.
+    if(keyStates['KeyD']){ 
+        // Define player boundary.
+        if(playerMesh.position.x < 2.5){
+            playerMesh.position.x += playerSpeed * delta;
+        }
+    }
+
+    // Forward player movement.
+    playerMesh.position.z -= gameVelocity * delta;
+
+    // Update bounding box.
+    playerObject_Global.boundingBox.copy(playerMesh.geometry.boundingBox).applyMatrix4(playerMesh.matrixWorld);
+
+    // Update light positions.
+    const headlights = playerObject_Global.headlights;
+
+    headlights[0].position.z = playerMesh.position.z - 3;
+    headlights[0].position.x = playerMesh.position.x - 0.5;
+    headlights[1].position.z = playerMesh.position.z - 3;
+    headlights[1].position.x = playerMesh.position.x + 0.5;
+}
 
 function updateEnvironment({delta, playerPositionX}){
 
     /* Enemy object */
 
     const enemyMesh = enemyObject_Global.mesh;
+    const followSpeed = 4.5;
+
 
     // Enemy forward motion.
-    enemyMesh.position.z -= gameVelocity * delta;
-    
-    // Enemy follows player in x direction (Horizontally).
-    const followSpeed = 4;
-    if(Math.round(enemyMesh.position.x) != Math.round(playerPositionX)){
-        if(enemyMesh.position.x > playerPositionX ){
-            enemyMesh.position.x -= followSpeed * delta;
-        } else {
-            enemyMesh.position.x += followSpeed * delta;
+    if(levelCleared == false ){
+        enemyMesh.position.z -= gameVelocity * delta;
+           
+        // Enemy follows player in x direction (Horizontally).
+        if(Math.round(enemyMesh.position.x) != Math.round(playerPositionX)){
+            if(enemyMesh.position.x > playerPositionX ){
+                enemyMesh.position.x -= followSpeed * delta;
+            } else {
+                enemyMesh.position.x += followSpeed * delta;
+            }
         }
     }
-
+    
     // Update enemy light positions in 'loop unroll'.
     const leftAlignment = enemyMesh.position.x - 0.5;
     const rightAlignment = enemyMesh.position.x + 0.5;
@@ -340,57 +403,37 @@ function populateLevel({playerMesh}){
 }
 
 /**
- * Callback used to update player position.
- * @param playerMesh 
- * @param delta 
- */
-function updatePlayerPosition({playerMesh, delta}){
-
-    // Move left.
-    if(keyStates['KeyA']){
-        // Define player boundary.
-        if(playerMesh.position.x > -2.5){
-            playerMesh.position.x -= playerSpeed * delta;
-        }
-    }
-    // Move right.
-    if(keyStates['KeyD']){ 
-        // Define player boundary.
-        if(playerMesh.position.x < 2.5){
-            playerMesh.position.x += playerSpeed * delta;
-        }
-    }
-
-    // Forward player movement.
-    playerMesh.position.z -= gameVelocity * delta;
-
-    // Update bounding box.
-    playerObject_Global.boundingBox.copy(playerMesh.geometry.boundingBox).applyMatrix4(playerMesh.matrixWorld);
-
-    // Update light positions.
-    const headlights = playerObject_Global.headlights;
-
-    headlights[0].position.z = playerMesh.position.z - 3;
-    headlights[0].position.x = playerMesh.position.x - 0.5;
-    headlights[1].position.z = playerMesh.position.z - 3;
-    headlights[1].position.x = playerMesh.position.x + 0.5;
-}
-
-/**
  * Callback to toggle between first and third
  * person.
  * @param playerMesh 
  */
-function updatePersonPerspective({playerMesh}){
-    if(firstPerson){
-        // First person properties.
-        camera_Global.position.z = playerMesh.position.z;
-        camera_Global.position.x = playerMesh.position.x;
-        camera_Global.position.y = 0.5;
-    } else {
-        // Third person properties.
-        camera_Global.position.y = 5;
+function updateCameraPerspective({playerMesh, delta}){
+    // If level cleared begin ending camera pan out.
+    if(levelCleared){
+        camera_Global.position.z += 6 * delta;
         camera_Global.position.x = 0;
-        camera_Global.position.z = playerMesh.position.z + 12;
+        camera_Global.position.y += 4 * delta;
+        setInterval(closeLevel, 10000);
+    } else {
+        if(firstPerson){
+            // First person properties.
+            camera_Global.position.z = playerMesh.position.z;
+            camera_Global.position.x = playerMesh.position.x;
+            camera_Global.position.y = 0.5;
+        } else {
+            // Third person properties.
+            camera_Global.position.y = 5;
+            camera_Global.position.x = 0;
+            camera_Global.position.z = playerMesh.position.z + 12;
+        }
     }
+
+}
+
+/**
+ * Callback used to close a level.
+ */
+function closeLevel(){
+    gameActive = false;
+    activateMenu();
 }

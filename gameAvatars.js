@@ -102,8 +102,8 @@ export function generateEnemy(){
     const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 4);
 
     // Police lights.
-    const redSirenLight = new THREE.SpotLight(0xFF0000, 70);
-    const blueSirenLight = new THREE.SpotLight(0x0000FF, 70);
+    const redSirenLight = new THREE.SpotLight(0xFF0000, 90);
+    const blueSirenLight = new THREE.SpotLight(0x0000FF, 90);
 
     const capsuleGeometry = new THREE.CapsuleGeometry(0.1, 0.1, 10, 10);
     capsuleGeometry.rotateZ(Math.PI/2);
