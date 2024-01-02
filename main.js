@@ -15,7 +15,7 @@ import * as THREE from 'three';
 /**
  * Import external game functions.
  */
-import { generateNPC, generatePlayer } from './gameAvatars';
+import { generateEnemy, generateNPC, generatePlayer } from './gameAvatars';
 
 /*** GAME CONTROLLER ***/
 
@@ -55,10 +55,23 @@ function deactivateMenu(){
     initialiseLevel1();
 }
 
-/**
- * Callback functions used to set key states 
- * controlling user input.
- */
+
+/*** WINDOW LISTENERS AND CALLBACKS ***/ 
+
+// Toggle game menu listener.
+gameMenuButton.addEventListener('click', () => {
+    if(gameActive){
+        activateMenu();
+    } else {
+        deactivateMenu();
+    }
+});
+
+// Keyboard input listener.
+window.addEventListener('keydown', keyDown);
+window.addEventListener('keyup', keyUp);
+
+// Press key.
 function keyDown(event){
     console.log(event.code)
     keyStates[event.code] = true;
@@ -76,26 +89,11 @@ function keyDown(event){
         firstPerson = !firstPerson;
     }
 }
-//
+
+// Release key.
 function keyUp(event){
     keyStates[event.code] = false;
 }
-
-/*** WINDOW LISTENERS ***/ 
-
-// Toggle game menu listener.
-gameMenuButton.addEventListener('click', () => {
-    if(gameActive){
-        activateMenu();
-    } else {
-        deactivateMenu();
-    }
-});
-
-// Keyboard input listener.
-window.addEventListener('keydown', keyDown);
-window.addEventListener('keyup', keyUp);
-
 
 /*** THREE.js GLOBAL VARIABLES ***/
 
@@ -113,16 +111,6 @@ let scene_Global;
 
 // Global camera.
 let camera_Global;
-
-// Global player object.
-let player_Global;
-let playerBB;
-const playerHeadLights = [];
-
-// Global enemy object.
-let enemy_Global;
-let enemyBB;
-const enemyHeadLights = []
 
 // Camera properties.
 const fov = 75;
@@ -148,6 +136,7 @@ const npcArray = [];
 let firstPerson = false;
 
 /*** GAME AVATARS ***/
+
 let playerObject_Global;
 let enemyObject_Global;
 
@@ -168,80 +157,28 @@ function initialiseLevel1(){
     camera.position.set(0, 5, 12);
 
     // Define renderer.
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
     /* Player - Generate and add to scene */
     const playerObject = generatePlayer();
 
-    // Mesh.
-    scene.add(playerObject.mesh);
-
-    // Lights.
-    scene.add(playerObject.headlights[0]);
-    scene.add(playerObject.headlights[1]);
+    for (let item of playerObject.sceneObjects){
+        scene.add(item);
+    }
 
     // Store in global variable.
     playerObject_Global = playerObject;
 
-    /* Enemy */
-    const enemyGeometry = new THREE.BoxGeometry(2, 1, 3);
-    const enemyMaterial = new THREE.MeshPhongMaterial( {color: 0x000000 } );
-    let enemyObject = new THREE.Mesh(enemyGeometry, enemyMaterial);
-    enemyObject.position.set(1.5, 0, 6);
+    /* Enemy - Generate and add to scene. */
+    const enemyObject = generateEnemy();
 
-    // Define bounding box.
-    enemyBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-    enemyBB.setFromObject(enemyObject);
+    for (let item of enemyObject.sceneObjects){
+        scene.add(item);
+    }
 
-    // Define headlights.
-    const enemyLeftHeadlight = new THREE.SpotLight(0xFFFFA9, 4);
-    const enemyRightHeadlight = new THREE.SpotLight(0xFFFFA9, 4);
+    // Store in global variable
+    enemyObject_Global = enemyObject;
 
-    enemyLeftHeadlight.position.set(enemyObject.position.x - 0.5, 0.5, enemyObject.position.z - 3);
-    enemyLeftHeadlight.angle = - Math.PI; 
-    enemyRightHeadlight.position.set(enemyObject.position.x + 0.5, 0.5, enemyObject.position.z - 3);
-    enemyRightHeadlight.angle = - Math.PI; 
-
-    enemyHeadLights[0] = enemyLeftHeadlight;
-    enemyHeadLights[1] = enemyRightHeadlight;
-
-    // Define sirens.
-    const capsuleGeometry = new THREE.CapsuleGeometry(0.1, 0.1, 10, 10);
-    capsuleGeometry.rotateZ(Math.PI/2)
-    const red = new THREE.MeshPhongMaterial({color: 0xFF0000});
-    const blue = new THREE.MeshPhongMaterial({color: 0x0000FF});
-
-
-    const redSiren = new THREE.SpotLight(0xFF0000, 70);
-    const redSirenObject = new THREE.Mesh(capsuleGeometry, red);
-
-    const blueSiren = new THREE.SpotLight(0x0000FF, 70);
-    const blueSirenObject = new THREE.Mesh(capsuleGeometry, blue);
-
-    redSirenObject.position.set(enemyObject.position.x - 0.5, 1, enemyObject.position.z);
-    redSiren.position.set(enemyObject.position.x - 0.5, 1.5, enemyObject.position.z);
-    redSiren.angle = - Math.PI; 
-
-    blueSirenObject.position.set(enemyObject.position.x + 0.5, 1, enemyObject.position.z);
-    blueSiren.position.set(enemyObject.position.x + 0.5, 1.5, enemyObject.position.z);
-    blueSiren.angle = - Math.PI; 
-
-    enemyHeadLights[2] = redSiren;
-    enemyHeadLights[3] = blueSiren;
-    
-    enemyHeadLights[4] = redSirenObject;
-    enemyHeadLights[5] = blueSirenObject
-
-    scene.add(enemyLeftHeadlight);
-    scene.add(enemyRightHeadlight);
-    scene.add(redSiren);
-    scene.add(blueSiren);
-    scene.add(redSirenObject);
-    scene.add(blueSirenObject);
-
-    
-    enemy_Global = enemyObject;
-    scene.add(enemyObject);
 
     // Define road plane.
     const floorGeometry = new THREE.PlaneGeometry(8, 1000);
@@ -269,7 +206,6 @@ function initialiseLevel1(){
     scene.add(sidewalkRight);
 
 
-
     scene_Global = scene;
     camera_Global = camera;
 
@@ -282,6 +218,12 @@ initialiseLevel1();
 /*** ANIMATION LOOP ***/
 function animate(){
 
+    // If game state is off, pause game.
+    if(!gameActive){
+        console.log('game paused')
+        return;
+    }
+
     /* Animation variables */
 
     // Player mesh for local scope.
@@ -289,14 +231,6 @@ function animate(){
 
     // Time delta for smooth movement.
     const delta = gameClock.getDelta();
-
-    /* Game Control */
-
-    // If game state is off, pause game.
-    if(!gameActive){
-        console.log('game paused')
-        return;
-    }
 
     /* Player Movement */
 
@@ -314,15 +248,7 @@ function animate(){
     }
 
     // Update NPC positions.
-    updateEnvironment(delta, playerMesh.position.x, playerMesh.position.z);
-
-
-
-    /* Collisions */
-
-    // Update bonding box positions.
-    enemyBB.copy(enemy_Global.geometry.boundingBox).applyMatrix4(enemy_Global.matrixWorld);
-
+    updateEnvironment({delta: delta, playerPositionX: playerMesh.position.x});
 
     // Update game timer after each frame.
     gameTimer++;
@@ -334,55 +260,60 @@ function animate(){
 
 /*** ANIMATION CALLBACK FUNCTIONS ***/
 
-/**
- * Move NPC objects.
- * @param delta 
- * @param playerPositionX 
- */
-function updateEnvironment(delta, playerPositionX, playerPositionZ){
+
+function updateEnvironment({delta, playerPositionX}){
 
     /* Enemy object */
 
+    const enemyMesh = enemyObject_Global.mesh;
+
     // Enemy forward motion.
-    enemy_Global.position.z -= (gameVelocity) * delta;
+    enemyMesh.position.z -= gameVelocity * delta;
     
     // Enemy follows player in x direction (Horizontally).
     const followSpeed = 4;
-    if(Math.round(enemy_Global.position.x) != Math.round(playerPositionX)){
-        if(enemy_Global.position.x > playerPositionX ){
-            enemy_Global.position.x -= followSpeed * delta;
+    if(Math.round(enemyMesh.position.x) != Math.round(playerPositionX)){
+        if(enemyMesh.position.x > playerPositionX ){
+            enemyMesh.position.x -= followSpeed * delta;
         } else {
-            enemy_Global.position.x += followSpeed * delta;
+            enemyMesh.position.x += followSpeed * delta;
         }
     }
 
-    enemyHeadLights[0].position.z = enemy_Global.position.z - 3;
-    enemyHeadLights[0].position.x = enemy_Global.position.x - 0.5;
+    // Update enemy light positions in 'loop unroll'.
+    const leftAlignment = enemyMesh.position.x - 0.5;
+    const rightAlignment = enemyMesh.position.x + 0.5;
 
-    enemyHeadLights[1].position.z = enemy_Global.position.z - 3;
-    enemyHeadLights[1].position.x = enemy_Global.position.x + 0.5;
+    for(let i = 0; i < 2; i ++){
 
-    enemyHeadLights[2].position.z = enemy_Global.position.z - 1;
-    enemyHeadLights[2].position.x = enemy_Global.position.x - 0.5;
+        enemyObject_Global.headlights[i].position.z = enemyMesh.position.z - 3;
+        enemyObject_Global.sirenLights[i].position.z = enemyMesh.position.z - 1;
+        enemyObject_Global.sirenObjects[i].position.z = enemyMesh.position.z;
 
-    enemyHeadLights[3].position.z = enemy_Global.position.z - 1;
-    enemyHeadLights[3].position.x = enemy_Global.position.x + 0.5;
+        if(i % 2 == 0){
+            enemyObject_Global.headlights[i].position.x = leftAlignment;
+            enemyObject_Global.sirenLights[i].position.x = leftAlignment;
+            enemyObject_Global.sirenObjects[i].position.x = leftAlignment;
+        } else {
+            enemyObject_Global.headlights[i].position.x = rightAlignment;
+            enemyObject_Global.sirenLights[i].position.x = rightAlignment;
+            enemyObject_Global.sirenObjects[i].position.x = rightAlignment;
+        }
 
+    }
 
-    enemyHeadLights[4].position.z = enemy_Global.position.z;
-    enemyHeadLights[4].position.x = enemy_Global.position.x - 0.5;
+    // Update bounding box.
+    enemyObject_Global.boundingBox.copy(enemyMesh.geometry.boundingBox).applyMatrix4(enemyMesh.matrixWorld);
 
-    enemyHeadLights[5].position.z = enemy_Global.position.z;
-    enemyHeadLights[5].position.x = enemy_Global.position.x + 0.5;
+    /* NPC objects */
 
-    /* NPC objects*/
     for(let npc of npcArray){
 
         // NPC movement.
-        npc.object.position.z -= npc.speed * delta;
+        npc.mesh.position.z -= npc.speed * delta;
 
         // NPC collision.
-        npc.boundingBox.copy(npc.object.geometry.boundingBox).applyMatrix4(npc.object.matrixWorld);
+        npc.boundingBox.copy(npc.mesh.geometry.boundingBox).applyMatrix4(npc.mesh.matrixWorld);
         if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
             console.log('collision');
             // gameActive = false;
@@ -403,7 +334,8 @@ function populateLevel({playerMesh}){
 
     // Instantiate NPC, add NPC to scene.
     let npc = generateNPC(positionProbability, playerMesh.position.z);
-    scene_Global.add(npc.object);
+    scene_Global.add(npc.mesh);
+
     npcArray.push(npc);
 }
 

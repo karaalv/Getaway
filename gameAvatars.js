@@ -18,13 +18,8 @@ import * as THREE from 'three';
 /* Global Properties */
 const carGeometry = new THREE.BoxGeometry(2, 1, 3);
 
+const HEAD_LIGHT_COLOUR = 0xFFFFA9;
 
-/* Enemy Properties */
-const enemyMaterial = new THREE.MeshPhongMaterial( {color: 0x000000 } );
-
-// Head lights.
-const enemyLeftHeadlight = new THREE.SpotLight(0xFFFFA9, 4);
-const enemyRightHeadlight = new THREE.SpotLight(0xFFFFA9, 4);
 
 /* NPC Properties */
 const npcMaterial = new THREE.MeshPhongMaterial( {color: 0xff0000} );
@@ -48,8 +43,8 @@ export function generatePlayer(){
     const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
     // Head lights.
-    const leftHeadlight = new THREE.SpotLight(0xFFFFA9, 6);
-    const rightHeadlight = new THREE.SpotLight(0xFFFFA9, 6);
+    const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 6);
+    const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 6);
 
     const headlights = [];
 
@@ -69,18 +64,112 @@ export function generatePlayer(){
     headlights[0] = leftHeadlight;
     headlights[1] = rightHeadlight;
 
+    const sceneObjects = [
+        playerMesh, 
+        leftHeadlight, 
+        rightHeadlight,
+    ]
+
     // Define player object for game controller.
     const playerObject = {
         mesh: playerMesh,
         boundingBox: boundingBox,
-        headlights: headlights
+        headlights: headlights,
+        sceneObjects: sceneObjects
     }
     return playerObject;
 }
 
+/**
+ * Instantiation of enemy avatar.
+ * function returns enemy object 
+ * for manipulation during game 
+ * runtime.
+ * @returns Enemy Object
+ */
 export function generateEnemy(){
 
-    const enemyMesh = new THREE.Mesh(carGeometry, enemyMaterial)
+    /* Enemy Properties */
+
+    const enemyMaterial = new THREE.MeshPhongMaterial( {color: 0x000000 } );
+    const enemyMesh = new THREE.Mesh(carGeometry, enemyMaterial);
+
+    // Bounding box.
+    const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+
+    // Head lights.
+    const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 4);
+    const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 4);
+
+    // Police lights.
+    const redSirenLight = new THREE.SpotLight(0xFF0000, 70);
+    const blueSirenLight = new THREE.SpotLight(0x0000FF, 70);
+
+    const capsuleGeometry = new THREE.CapsuleGeometry(0.1, 0.1, 10, 10);
+    capsuleGeometry.rotateZ(Math.PI/2);
+
+    const redSirenObject = new THREE.Mesh(capsuleGeometry, new THREE.MeshPhongMaterial({color: 0xFF0000}));
+    const blueSirenObject = new THREE.Mesh(capsuleGeometry, new THREE.MeshPhongMaterial({color: 0x0000FF}));
+
+    const headlights = [];
+    const sirenLights = [];
+    const sirenObjects = [];
+
+    /* Initial Position */
+
+    enemyMesh.position.set(1.5, 0, 6);
+
+    // Bounding box.
+    boundingBox.setFromObject(enemyMesh);
+
+    // Lights.
+    leftHeadlight.position.set(enemyMesh.position.x - 0.5, 0.5, enemyMesh.position.z - 3);
+    leftHeadlight.angle = - Math.PI; 
+
+    rightHeadlight.position.set(enemyMesh.position.x + 0.5, 0.5, enemyMesh.position.z - 3);
+    rightHeadlight.angle = - Math.PI; 
+
+
+    // Define sirens.
+
+    redSirenObject.position.set(enemyMesh.position.x - 0.5, 1, enemyMesh.position.z);
+    blueSirenObject.position.set(enemyMesh.position.x + 0.5, 1, enemyMesh.position.z);
+
+    sirenObjects[0] = redSirenObject;
+    sirenObjects[1] = blueSirenObject;
+
+    redSirenLight.position.set(enemyMesh.position.x - 0.5, 1.5, enemyMesh.position.z);
+    redSirenLight.angle = - Math.PI; 
+
+    blueSirenLight.position.set(enemyMesh.position.x + 0.5, 1.5, enemyMesh.position.z);
+    blueSirenLight.angle = - Math.PI; 
+
+    headlights[0] = leftHeadlight;
+    headlights[1] = rightHeadlight;
+
+    sirenLights[0] = redSirenLight;
+    sirenLights[1] = blueSirenLight;
+
+    const sceneObjects = [
+        enemyMesh, 
+        leftHeadlight, 
+        rightHeadlight, 
+        redSirenLight, 
+        blueSirenLight, 
+        redSirenObject, 
+        blueSirenObject,
+    ];
+    
+    // Define player object for game controller.
+    const enemyObject = {
+        mesh: enemyMesh,
+        boundingBox: boundingBox,
+        headlights: headlights,
+        sirenLights: sirenLights,
+        sirenObjects: sirenObjects,
+        sceneObjects: sceneObjects, 
+    }
+    return enemyObject;
 }
 
 /**
@@ -91,11 +180,11 @@ export function generateEnemy(){
  */
 export function generateNPC(positionProbability, playerPositionZ){
     
-    // Define NPC object.
-    let objectMesh = new THREE.Mesh(carGeometry,  npcMaterial);
+    /* NPC Properties */
+    const npcMesh = new THREE.Mesh(carGeometry,  npcMaterial);
 
-    // Define bounding box.
-    let boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    // Bounding box.
+    const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
     // NPC speed - Random variable.
     let speed = Math.floor(Math.random() * 5) + 20;
@@ -123,16 +212,16 @@ export function generateNPC(positionProbability, playerPositionZ){
     }
 
     // Set NPC position.
-    objectMesh.position.set(randomX, 0, randomZ);
-    boundingBox.setFromObject(objectMesh);
+    npcMesh.position.set(randomX, 0, randomZ);
+    boundingBox.setFromObject(npcMesh);
 
-    return (
-        {
-            object: objectMesh,
-            speed: speed,
-            boundingBox: boundingBox
-        }
-    )
+    const npcObject = {
+        mesh: npcMesh, 
+        speed: speed,
+        boundingBox: boundingBox,
+    }
+
+    return npcObject;
 
 }
 
