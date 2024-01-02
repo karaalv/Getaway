@@ -1,4 +1,12 @@
 /**
+ * MAIN GAME SCRIPT
+ * 
+ * This file acts as the controller
+ * for all game aspects.
+ */
+
+
+/**
  * Import assets from the Three.js library under 
  * the alias 'THREE'
  */
@@ -7,7 +15,7 @@ import * as THREE from 'three';
 /**
  * Import external game functions.
  */
-import { generateNPC } from './GameLogic';
+import { generateNPC, generatePlayer } from './gameAvatars';
 
 /*** GAME CONTROLLER ***/
 
@@ -116,7 +124,6 @@ let enemy_Global;
 let enemyBB;
 const enemyHeadLights = []
 
-
 // Camera properties.
 const fov = 75;
 const aspectRatio = window.innerWidth / window.innerHeight;
@@ -140,6 +147,10 @@ const npcArray = [];
 // Perspective.
 let firstPerson = false;
 
+/*** GAME AVATARS ***/
+let playerObject_Global;
+let enemyObject_Global;
+
 /*** LEVEL INITIALISATION ***/
 
 function initialiseLevel1(){
@@ -159,35 +170,18 @@ function initialiseLevel1(){
     // Define renderer.
     renderer.setSize( window.innerWidth, window.innerHeight );
 
-    /* Player */
-    const playerGeometry = new THREE.BoxGeometry(2, 1, 3);
-    const playerMaterial = new THREE.MeshPhongMaterial( {color: 0xFFFFFF } );
-    let playerObject = new THREE.Mesh(playerGeometry, playerMaterial);
-    playerObject.position.set(1.5, 0, 0);
+    /* Player - Generate and add to scene */
+    const playerObject = generatePlayer();
 
-    // Define bounding box.
-    playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-    playerBB.setFromObject(playerObject);
+    // Mesh.
+    scene.add(playerObject.mesh);
 
-    // Define player headlights.
-    const playerLeftHeadlight = new THREE.SpotLight(0xFFFFA9, 6);
-    const playerRightHeadlight = new THREE.SpotLight(0xFFFFA9, 6);
+    // Lights.
+    scene.add(playerObject.headlights[0]);
+    scene.add(playerObject.headlights[1]);
 
-    playerLeftHeadlight.position.set(playerObject.position.x - 0.5, 0.5, playerObject.position.z - 3);
-    playerLeftHeadlight.angle = - Math.PI; 
-    playerRightHeadlight.position.set(playerObject.position.x + 0.5, 0.5, playerObject.position.z - 3);
-    playerRightHeadlight.angle = - Math.PI; 
-
-    playerHeadLights[0] = playerLeftHeadlight;
-    playerHeadLights[1] = playerRightHeadlight;
-
-
-    scene.add(playerLeftHeadlight);
-    scene.add(playerRightHeadlight);
-
-
-    player_Global = playerObject;
-    scene.add(playerObject);
+    // Store in global variable.
+    playerObject_Global = playerObject;
 
     /* Enemy */
     const enemyGeometry = new THREE.BoxGeometry(2, 1, 3);
@@ -288,6 +282,14 @@ initialiseLevel1();
 /*** ANIMATION LOOP ***/
 function animate(){
 
+    /* Animation variables */
+
+    // Player mesh for local scope.
+    const playerMesh = playerObject_Global.mesh;
+
+    // Time delta for smooth movement.
+    const delta = gameClock.getDelta();
+
     /* Game Control */
 
     // If game state is off, pause game.
@@ -296,83 +298,41 @@ function animate(){
         return;
     }
 
-    /**
-     * User input handles.
-     * Time delta used for smother movement.
-     * Camera is kept in defined position.
-     */
-    const delta = gameClock.getDelta();
-
     /* Player Movement */
 
-    // Move left.
-    if(keyStates['KeyA']){
-        // Define player boundary.
-        if(player_Global.position.x > -2.5){
-            player_Global.position.x -= playerSpeed * delta;
-        }
-    }
-    // Move right.
-    if(keyStates['KeyD']){ 
-        // Define player boundary.
-        if(player_Global.position.x < 2.5){
-            player_Global.position.x += playerSpeed * delta;
-        }
-    }
-
-    // Forward player movement.
-    player_Global.position.z -= gameVelocity * delta;
-
-    // Update light positions.
-    playerHeadLights[0].position.z = player_Global.position.z - 3;
-    playerHeadLights[0].position.x = player_Global.position.x - 0.5;
-    playerHeadLights[1].position.z = player_Global.position.z - 3;
-    playerHeadLights[1].position.x = player_Global.position.x + 0.5;
-
+    updatePlayerPosition({delta: delta, playerMesh: playerMesh});
 
     /* Camera Control */
 
-    if(firstPerson){
-        // First person properties.
-        camera_Global.position.z = player_Global.position.z;
-        camera_Global.position.x = player_Global.position.x;
-        camera_Global.position.y = 0.5;
-    } else {
-        // Third person properties.
-        camera_Global.position.y = 5;
-        camera_Global.position.x = 0;
-        camera_Global.position.z = player_Global.position.z + 12;
-    }
-
-
-    // console.log(player_Global.position.z)
+    updatePersonPerspective({playerMesh: playerMesh});
 
     /* Environment */
 
     // Add NPCs to level at defined spawn rate.
     if(gameTimer % spawnRate == 0){
-        populateLevel();
+        populateLevel({playerMesh: playerMesh});
     }
 
     // Update NPC positions.
-    updateEnvironment(delta, player_Global.position.x, player_Global.position.z);
+    updateEnvironment(delta, playerMesh.position.x, playerMesh.position.z);
 
-    requestAnimationFrame(animate);
-    renderer.render(scene_Global, camera_Global);
+
 
     /* Collisions */
 
     // Update bonding box positions.
-    playerBB.copy(player_Global.geometry.boundingBox).applyMatrix4(player_Global.matrixWorld);
     enemyBB.copy(enemy_Global.geometry.boundingBox).applyMatrix4(enemy_Global.matrixWorld);
 
 
     // Update game timer after each frame.
     gameTimer++;
+
+    requestAnimationFrame(animate);
+    renderer.render(scene_Global, camera_Global);
 }
 
 
-/*** ENVIRONMENT CALLBACK FUNCTIONS ***/
+/*** ANIMATION CALLBACK FUNCTIONS ***/
 
 /**
  * Move NPC objects.
@@ -423,7 +383,7 @@ function updateEnvironment(delta, playerPositionX, playerPositionZ){
 
         // NPC collision.
         npc.boundingBox.copy(npc.object.geometry.boundingBox).applyMatrix4(npc.object.matrixWorld);
-        if(playerBB.intersectsBox(npc.boundingBox)){
+        if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
             console.log('collision');
             // gameActive = false;
         }
@@ -434,18 +394,71 @@ function updateEnvironment(delta, playerPositionX, playerPositionZ){
 
 /**
  * Callback used to add NPC objects to scene.
+ * @param playerMesh 
  */
-function populateLevel(){
+function populateLevel({playerMesh}){
 
     // Compute position of NPC.
     const positionProbability = Math.round(Math.sin(positionFrequency * gameTimer));
-    let npc;
 
     // Instantiate NPC, add NPC to scene.
-    npc = generateNPC(positionProbability, player_Global.position.z);
+    let npc = generateNPC(positionProbability, playerMesh.position.z);
     scene_Global.add(npc.object);
     npcArray.push(npc);
 }
 
+/**
+ * Callback used to update player position.
+ * @param playerMesh 
+ * @param delta 
+ */
+function updatePlayerPosition({playerMesh, delta}){
 
+    // Move left.
+    if(keyStates['KeyA']){
+        // Define player boundary.
+        if(playerMesh.position.x > -2.5){
+            playerMesh.position.x -= playerSpeed * delta;
+        }
+    }
+    // Move right.
+    if(keyStates['KeyD']){ 
+        // Define player boundary.
+        if(playerMesh.position.x < 2.5){
+            playerMesh.position.x += playerSpeed * delta;
+        }
+    }
 
+    // Forward player movement.
+    playerMesh.position.z -= gameVelocity * delta;
+
+    // Update bounding box.
+    playerObject_Global.boundingBox.copy(playerMesh.geometry.boundingBox).applyMatrix4(playerMesh.matrixWorld);
+
+    // Update light positions.
+    const headlights = playerObject_Global.headlights;
+
+    headlights[0].position.z = playerMesh.position.z - 3;
+    headlights[0].position.x = playerMesh.position.x - 0.5;
+    headlights[1].position.z = playerMesh.position.z - 3;
+    headlights[1].position.x = playerMesh.position.x + 0.5;
+}
+
+/**
+ * Callback to toggle between first and third
+ * person.
+ * @param playerMesh 
+ */
+function updatePersonPerspective({playerMesh}){
+    if(firstPerson){
+        // First person properties.
+        camera_Global.position.z = playerMesh.position.z;
+        camera_Global.position.x = playerMesh.position.x;
+        camera_Global.position.y = 0.5;
+    } else {
+        // Third person properties.
+        camera_Global.position.y = 5;
+        camera_Global.position.x = 0;
+        camera_Global.position.z = playerMesh.position.z + 12;
+    }
+}
