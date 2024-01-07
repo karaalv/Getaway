@@ -14,10 +14,12 @@
  * the alias 'THREE'
  */
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 
 /* Global Properties */
 const carGeometry = new THREE.BoxGeometry(2, 1, 3);
-
+const BLENDER_SCALE_FACTOR = 0.45;
 const HEAD_LIGHT_COLOUR = 0xFFFFA9;
 
 
@@ -178,50 +180,58 @@ export function generateEnemy(){
  * @param playerPositionZ 
  * @returns NPC Mesh
  */
-export function generateNPC(positionProbability, playerPositionZ){
-    
-    /* NPC Properties */
-    const npcMesh = new THREE.Mesh(carGeometry,  npcMaterial);
+export function generateNPC(positionProbability, playerPositionZ) {
+    // Handle asynchronous loading.
+    return new Promise((resolve, reject) => {
 
-    // Bounding box.
-    const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+        /* Load NPC model */
+        const loader = new GLTFLoader();
+        loader.load('./assets/NPCcar.glb', function (glb) {
+           const npcMesh = glb.scene;
 
-    // NPC speed - Random variable.
-    let speed = Math.floor(Math.random() * 5) + 20;
+           // Scale model.
+           npcMesh.scale.set(BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR);
 
-    // NPC position - Sine curve variation.
-    let randomX;
-    let randomZ;
+            // Bounding box.
+            const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
-    if(positionProbability > 0){
-        randomX = -1.5
-    } else {
-        randomX = 1.5
-        speed *= -1.8;
-    }
+            // NPC speed - Random variable.
+            let speed = Math.floor(Math.random() * 5) + 25;
 
-    /**
-     * Spawn points depend on direction on road.
-     * the NPC spawns, both positions should be 
-     * at the respective clipping zones.
-     */
-    if(randomX > 0){
-        randomZ = playerPositionZ - 150;
-    } else {
-        randomZ = playerPositionZ + 50;
-    }
+            // NPC position - Sine curve variation.
+            let randomX;
+            let randomZ;
 
-    // Set NPC position.
-    npcMesh.position.set(randomX, 0, randomZ);
-    boundingBox.setFromObject(npcMesh);
+            if (positionProbability > 0) {
+                randomX = -1.5;
+            } else {
+                randomX = 1.5;
+                speed *= -1;
+            }
 
-    const npcObject = {
-        mesh: npcMesh, 
-        speed: speed,
-        boundingBox: boundingBox,
-    }
+            /**
+             * Spawn points depend on direction on road.
+             * the NPC spawns, both positions should be
+             * at the respective clipping zones.
+             */
+            if (randomX > 0) {
+                randomZ = playerPositionZ - 150;
+            } else {
+                randomZ = playerPositionZ + 50;
+            }
 
-    return npcObject;
+            // Set NPC position.
+            npcMesh.position.set(randomX, 0, randomZ);
+            boundingBox.setFromObject(npcMesh);
 
+            const npcObject = {
+                mesh: npcMesh,
+                speed: speed,
+                boundingBox: boundingBox,
+            };
+
+            resolve(npcObject);
+        });
+    });
 }
 

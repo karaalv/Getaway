@@ -11,6 +11,7 @@
  * the alias 'THREE'
  */
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /**
  * Import external game functions.
@@ -73,7 +74,6 @@ window.addEventListener('keyup', keyUp);
 
 // Press key.
 function keyDown(event){
-    console.log(event.code)
     keyStates[event.code] = true;
 
     // Pause game.
@@ -124,11 +124,11 @@ const far = 200;
 const GAME_LENGTH = 1000;
 
 // Time.
-let gameTimer = 0;
+let gameTimer = 0; 
 
 // Speed.
-const playerSpeed = 15.0;
-const gameVelocity = 8.0;
+const playerHorizontalSpeed = 15.0;
+const playerForwardSpeed = 8.0;
 
 // NPC behaviour.
 const spawnRate = 120;
@@ -149,6 +149,12 @@ let enemyObject_Global;
 /*** LEVEL INITIALISATION ***/
 
 function initialiseLevel1(){
+
+    // const loader = new GLTFLoader();
+    // loader.load('./assets/NPCcar.glb', (glb) => {
+    //     const model = glb.scene
+    //     scene.add(model)
+    // })
 
     /* THREE JS Properties */
 
@@ -285,7 +291,7 @@ function animate(){
  * @param delta 
  */
 function updatePlayerPosition({playerMesh, delta}){
-    console.log(playerMesh.position.z)
+    // console.log(playerMesh.position.z)
     // End level if goal reached.
     if(playerMesh.position.z < -500){
         levelCleared = true;
@@ -295,19 +301,19 @@ function updatePlayerPosition({playerMesh, delta}){
     if(keyStates['KeyA']){
         // Define player boundary.
         if(playerMesh.position.x > -2.5){
-            playerMesh.position.x -= playerSpeed * delta;
+            playerMesh.position.x -= playerHorizontalSpeed * delta;
         }
     }
     // Move right.
     if(keyStates['KeyD']){ 
         // Define player boundary.
         if(playerMesh.position.x < 2.5){
-            playerMesh.position.x += playerSpeed * delta;
+            playerMesh.position.x += playerHorizontalSpeed * delta;
         }
     }
 
     // Forward player movement.
-    playerMesh.position.z -= gameVelocity * delta;
+    playerMesh.position.z -= playerForwardSpeed * delta;
 
     // Update bounding box.
     playerObject_Global.boundingBox.copy(playerMesh.geometry.boundingBox).applyMatrix4(playerMesh.matrixWorld);
@@ -331,7 +337,7 @@ function updateEnvironment({delta, playerPositionX}){
 
     // Enemy forward motion.
     if(levelCleared == false ){
-        enemyMesh.position.z -= gameVelocity * delta;
+        enemyMesh.position.z -= playerForwardSpeed * delta;
            
         // Enemy follows player in x direction (Horizontally).
         if(Math.round(enemyMesh.position.x) != Math.round(playerPositionX)){
@@ -374,9 +380,9 @@ function updateEnvironment({delta, playerPositionX}){
 
         // NPC movement.
         npc.mesh.position.z -= npc.speed * delta;
-
         // NPC collision.
-        npc.boundingBox.copy(npc.mesh.geometry.boundingBox).applyMatrix4(npc.mesh.matrixWorld);
+        // npc.boundingBox.copy(npc.mesh.geometry.boundingBox).applyMatrix4(npc.mesh.matrixWorld);
+        npc.boundingBox.setFromObject(npc.mesh);
         if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
             console.log('collision');
             // gameActive = false;
@@ -390,13 +396,13 @@ function updateEnvironment({delta, playerPositionX}){
  * Callback used to add NPC objects to scene.
  * @param playerMesh 
  */
-function populateLevel({playerMesh}){
+async function populateLevel({playerMesh}){
 
     // Compute position of NPC.
     const positionProbability = Math.round(Math.sin(positionFrequency * gameTimer));
 
     // Instantiate NPC, add NPC to scene.
-    let npc = generateNPC(positionProbability, playerMesh.position.z);
+    let npc = await generateNPC(positionProbability, playerMesh.position.z);
     scene_Global.add(npc.mesh);
 
     npcArray.push(npc);
