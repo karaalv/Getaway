@@ -148,13 +148,7 @@ let enemyObject_Global;
 
 /*** LEVEL INITIALISATION ***/
 
-function initialiseLevel1(){
-
-    // const loader = new GLTFLoader();
-    // loader.load('./assets/NPCcar.glb', (glb) => {
-    //     const model = glb.scene
-    //     scene.add(model)
-    // })
+async function initialiseLevel1(){
 
     /* THREE JS Properties */
 
@@ -222,7 +216,7 @@ function initialiseLevel1(){
     playerObject_Global = playerObject;
 
     /* Enemy - Generate and add to scene. */
-    const enemyObject = generateEnemy();
+    const enemyObject = await generateEnemy();
 
     for (let item of enemyObject.sceneObjects){
         scene.add(item);
@@ -327,13 +321,18 @@ function updatePlayerPosition({playerMesh, delta}){
     headlights[1].position.x = playerMesh.position.x + 0.5;
 }
 
+/**
+ * Callback used to update positions of
+ * NPCs
+ * @param delta
+ * @param playerPositionX
+ */
 function updateEnvironment({delta, playerPositionX}){
 
     /* Enemy object */
 
     const enemyMesh = enemyObject_Global.mesh;
     const followSpeed = 4.5;
-
 
     // Enemy forward motion.
     if(levelCleared == false ){
@@ -357,22 +356,16 @@ function updateEnvironment({delta, playerPositionX}){
 
         enemyObject_Global.headlights[i].position.z = enemyMesh.position.z - 3;
         enemyObject_Global.sirenLights[i].position.z = enemyMesh.position.z - 1;
-        enemyObject_Global.sirenObjects[i].position.z = enemyMesh.position.z;
 
         if(i % 2 == 0){
             enemyObject_Global.headlights[i].position.x = leftAlignment;
             enemyObject_Global.sirenLights[i].position.x = leftAlignment;
-            enemyObject_Global.sirenObjects[i].position.x = leftAlignment;
         } else {
             enemyObject_Global.headlights[i].position.x = rightAlignment;
             enemyObject_Global.sirenLights[i].position.x = rightAlignment;
-            enemyObject_Global.sirenObjects[i].position.x = rightAlignment;
         }
 
     }
-
-    // Update bounding box.
-    enemyObject_Global.boundingBox.copy(enemyMesh.geometry.boundingBox).applyMatrix4(enemyMesh.matrixWorld);
 
     /* NPC objects */
 
@@ -381,7 +374,6 @@ function updateEnvironment({delta, playerPositionX}){
         // NPC movement.
         npc.mesh.position.z -= npc.speed * delta;
         // NPC collision.
-        // npc.boundingBox.copy(npc.mesh.geometry.boundingBox).applyMatrix4(npc.mesh.matrixWorld);
         npc.boundingBox.setFromObject(npc.mesh);
         if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
             console.log('collision');
@@ -428,9 +420,9 @@ function updateCameraPerspective({playerMesh, delta}){
             camera_Global.position.y = 0.5;
         } else {
             // Third person properties.
-            camera_Global.position.y = 5;
+            camera_Global.position.y = 6;
             camera_Global.position.x = 0;
-            camera_Global.position.z = playerMesh.position.z + 12;
+            camera_Global.position.z = playerMesh.position.z + 13;
         }
     }
 
