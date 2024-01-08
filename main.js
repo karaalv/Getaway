@@ -174,7 +174,16 @@ async function initialiseLevel1(){
 
     // Define road plane.
     const roadGeometry = new THREE.PlaneGeometry(8, 750);
-    const roadMaterial = new THREE.MeshPhongMaterial({color: 0xF88379, side: THREE.DoubleSide});
+
+    // Asphalt texture.
+    const asphaltTexture = new THREE.TextureLoader().load('./assets/AsphaltTexture.jpg');
+
+    // Wrap texture.
+    asphaltTexture.wrapS = THREE.RepeatWrapping;
+    asphaltTexture.wrapT = THREE.RepeatWrapping;
+    asphaltTexture.repeat.set(1, 20)
+
+    const roadMaterial = new THREE.MeshPhongMaterial({map: asphaltTexture, side: THREE.DoubleSide});
     const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
     roadMesh.rotateX(Math.PI / 2);
     roadMesh.position.set(0, -1, -250);
@@ -182,7 +191,16 @@ async function initialiseLevel1(){
 
     // Define sidewalk planes.
     const sideWalkGeometry = new THREE.BoxGeometry(1, 750, 1.5);
-    const sidewalkMaterial = new THREE.MeshPhongMaterial({color: 0xA0A0A0, side: THREE.DoubleSide});
+
+    // Concrete texture.
+    const concreteTexture = new THREE.TextureLoader().load('./assets/ConcreteTexture.jpg');
+
+    // Wrap texture.
+    concreteTexture.wrapS = THREE.RepeatWrapping;
+    concreteTexture.wrapT = THREE.RepeatWrapping;
+    concreteTexture.repeat.set(0.05, 20)
+
+    const sidewalkMaterial = new THREE.MeshPhongMaterial({map: concreteTexture, side: THREE.DoubleSide});
     const sidewalkLeft = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
     const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
 
