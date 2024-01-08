@@ -16,12 +16,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-
 /* Global Properties */
 const carGeometry = new THREE.BoxGeometry(2, 1, 3);
 const BLENDER_SCALE_FACTOR = 0.45;
 const HEAD_LIGHT_COLOUR = 0xFFFFA9;
-
 
 /**
  * Instantiation of player avatar.
@@ -32,50 +30,56 @@ const HEAD_LIGHT_COLOUR = 0xFFFFA9;
  */
 export function generatePlayer(){
 
-    /* Player Properties */
+    return new Promise((resolve, reject) => {
+        /* Load Player car model */
+        const loader = new GLTFLoader();
 
-    const playerMaterial = new THREE.MeshPhongMaterial( {color: 0xFFFFFF } );
-    const playerMesh = new THREE.Mesh(carGeometry, playerMaterial);
+        loader.load('./assets/PlayerCar.glb', function(glb) {
+            const playerMesh = glb.scene;
 
-    // Bounding box.
-    const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+            // Scale model.
+            playerMesh.scale.set(0.55, 0.55, 0.55);
 
-    // Head lights.
-    const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 6);
-    const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 6);
-
-    const headlights = [];
-
-    /* Initial Position */
-
-    playerMesh.position.set(1.5, 0, 0);
-
-    // Bounding box.
-    boundingBox.setFromObject(playerMesh);
-
-    // Lights.
-    leftHeadlight.position.set(playerMesh.position.x - 0.5, 0.5, playerMesh.position.z - 3);
-    leftHeadlight.angle = - Math.PI; 
-    rightHeadlight.position.set(playerMesh.position.x + 0.5, 0.5, playerMesh.position.z - 3);
-    rightHeadlight.angle = - Math.PI; 
-
-    headlights[0] = leftHeadlight;
-    headlights[1] = rightHeadlight;
-
-    const sceneObjects = [
-        playerMesh, 
-        leftHeadlight, 
-        rightHeadlight,
-    ]
-
-    // Define player object for game controller.
-    const playerObject = {
-        mesh: playerMesh,
-        boundingBox: boundingBox,
-        headlights: headlights,
-        sceneObjects: sceneObjects
-    }
-    return playerObject;
+            // Bounding box.
+            const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    
+            // Head lights.
+            const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 8);
+            const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 8);
+    
+            const headlights = [];
+    
+            /* Initial Position */
+            playerMesh.position.set(1.5, -1, 0);
+    
+            // Bounding box.
+            boundingBox.setFromObject(playerMesh);
+    
+            // Lights.
+            leftHeadlight.position.set(playerMesh.position.x - 0.6, -0.25, playerMesh.position.z - 3.5);
+            leftHeadlight.angle = - Math.PI; 
+            rightHeadlight.position.set(playerMesh.position.x + 0.6, -0.25, playerMesh.position.z - 3.5);
+            rightHeadlight.angle = - Math.PI; 
+    
+            headlights[0] = leftHeadlight;
+            headlights[1] = rightHeadlight;
+    
+            const sceneObjects = [
+                playerMesh, 
+                leftHeadlight, 
+                rightHeadlight,
+            ]
+    
+            // Define player object for game controller.
+            const playerObject = {
+                mesh: playerMesh,
+                boundingBox: boundingBox,
+                headlights: headlights,
+                sceneObjects: sceneObjects
+            }
+            resolve(playerObject);
+        })
+    })
 }
 
 /**
@@ -88,68 +92,68 @@ export function generatePlayer(){
 export function generateEnemy(){
 
     return new Promise((resolve, reject) => {
-    /* Load Police car model */
-    const loader = new GLTFLoader();
+        /* Load Police car model */
+        const loader = new GLTFLoader();
 
-    loader.load('./assets/PoliceCar.glb', function(glb) {
-        const enemyMesh = glb.scene;
+        loader.load('./assets/PoliceCar.glb', function(glb) {
+            const enemyMesh = glb.scene;
 
-        // Scale model.
-        enemyMesh.scale.set(BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR);
+            // Scale model.
+            enemyMesh.scale.set(BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR);
 
-        // Head lights.
-        const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 4);
-        const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 4);
+            // Head lights.
+            const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 4);
+            const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 4);
 
-        // Police lights.
-        const redSirenLight = new THREE.SpotLight(0xFF0000, 100);
-        const blueSirenLight = new THREE.SpotLight(0x0000FF, 100);
+            // Police lights.
+            const redSirenLight = new THREE.SpotLight(0xFF0000, 100);
+            const blueSirenLight = new THREE.SpotLight(0x0000FF, 100);
 
-        const headlights = [];
-        const sirenLights = [];
+            const headlights = [];
+            const sirenLights = [];
 
-        /* Initial Position */
+            /* Initial Position */
 
-        enemyMesh.position.set(1.5, -1, 6);
+            enemyMesh.position.set(1.5, -1, 6.5);
 
-        // Lights.
-        leftHeadlight.position.set(enemyMesh.position.x - 0.5, 0.5, enemyMesh.position.z - 3);
-        leftHeadlight.angle = - Math.PI; 
+            // Lights.
+            leftHeadlight.position.set(enemyMesh.position.x - 0.5, 0.5, enemyMesh.position.z - 3);
+            leftHeadlight.angle = - Math.PI; 
 
-        rightHeadlight.position.set(enemyMesh.position.x + 0.5, 0.5, enemyMesh.position.z - 3);
-        rightHeadlight.angle = - Math.PI; 
+            rightHeadlight.position.set(enemyMesh.position.x + 0.5, 0.5, enemyMesh.position.z - 3);
+            rightHeadlight.angle = - Math.PI; 
 
 
-        // Define sirens.
+            // Define sirens.
 
-        redSirenLight.position.set(enemyMesh.position.x - 0.5, 1.5, enemyMesh.position.z);
-        redSirenLight.angle = - Math.PI; 
+            redSirenLight.position.set(enemyMesh.position.x - 0.5, 1.5, enemyMesh.position.z);
+            redSirenLight.angle = - Math.PI; 
 
-        blueSirenLight.position.set(enemyMesh.position.x + 0.5, 1.5, enemyMesh.position.z);
-        blueSirenLight.angle = - Math.PI; 
+            blueSirenLight.position.set(enemyMesh.position.x + 0.5, 1.5, enemyMesh.position.z);
+            blueSirenLight.angle = - Math.PI; 
 
-        headlights[0] = leftHeadlight;
-        headlights[1] = rightHeadlight;
+            headlights[0] = leftHeadlight;
+            headlights[1] = rightHeadlight;
 
-        sirenLights[0] = redSirenLight;
-        sirenLights[1] = blueSirenLight;
+            sirenLights[0] = redSirenLight;
+            sirenLights[1] = blueSirenLight;
 
-        const sceneObjects = [
-            enemyMesh, 
-            leftHeadlight, 
-            rightHeadlight, 
-            redSirenLight, 
-            blueSirenLight, 
-        ];
-        
-        // Define player object for game controller.
-        const enemyObject = {
-            mesh: enemyMesh,
-            headlights: headlights,
-            sirenLights: sirenLights,
-            sceneObjects: sceneObjects, 
-        }
-        resolve(enemyObject);
+            const sceneObjects = [
+                enemyMesh, 
+                leftHeadlight, 
+                rightHeadlight, 
+                redSirenLight, 
+                blueSirenLight, 
+            ];
+            
+            // Define player object for game controller.
+            const enemyObject = {
+                mesh: enemyMesh,
+                headlights: headlights,
+                sirenLights: sirenLights,
+                sceneObjects: sceneObjects, 
+            }
+            resolve(enemyObject);
     })
 
     })

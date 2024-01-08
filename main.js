@@ -158,7 +158,7 @@ async function initialiseLevel1(){
 
     // Define camera and camera position.
     const camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
-    camera.position.set(0, 5, 12);
+    camera.position.set(0, 5.75, 13);
 
     // Define renderer.
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -169,7 +169,7 @@ async function initialiseLevel1(){
     /* Level Features */
 
     // Lighting.
-    const ambientLight = new THREE.AmbientLight(0xE1E1FF, 2.5);
+    const ambientLight = new THREE.AmbientLight(0xE1E1FF, 2.0);
     scene.add(ambientLight);
 
     // Define road plane.
@@ -206,7 +206,7 @@ async function initialiseLevel1(){
     /* Avatars */
 
     /* Player - Generate and add to scene */
-    const playerObject = generatePlayer();
+    const playerObject = await generatePlayer();
 
     for (let item of playerObject.sceneObjects){
         scene.add(item);
@@ -310,15 +310,15 @@ function updatePlayerPosition({playerMesh, delta}){
     playerMesh.position.z -= playerForwardSpeed * delta;
 
     // Update bounding box.
-    playerObject_Global.boundingBox.copy(playerMesh.geometry.boundingBox).applyMatrix4(playerMesh.matrixWorld);
+    playerObject_Global.boundingBox.setFromObject(playerObject_Global.mesh);
 
     // Update light positions.
     const headlights = playerObject_Global.headlights;
 
-    headlights[0].position.z = playerMesh.position.z - 3;
-    headlights[0].position.x = playerMesh.position.x - 0.5;
-    headlights[1].position.z = playerMesh.position.z - 3;
-    headlights[1].position.x = playerMesh.position.x + 0.5;
+    headlights[0].position.z = playerMesh.position.z - 3.5;
+    headlights[0].position.x = playerMesh.position.x - 0.6;
+    headlights[1].position.z = playerMesh.position.z - 3.5;
+    headlights[1].position.x = playerMesh.position.x + 0.6;
 }
 
 /**
@@ -415,12 +415,12 @@ function updateCameraPerspective({playerMesh, delta}){
     } else {
         if(firstPerson){
             // First person properties.
-            camera_Global.position.z = playerMesh.position.z;
+            camera_Global.position.z = playerMesh.position.z - 0.5;
             camera_Global.position.x = playerMesh.position.x;
             camera_Global.position.y = 0.5;
         } else {
             // Third person properties.
-            camera_Global.position.y = 6;
+            camera_Global.position.y = 5.75;
             camera_Global.position.x = 0;
             camera_Global.position.z = playerMesh.position.z + 13;
         }
