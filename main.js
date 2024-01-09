@@ -5,18 +5,14 @@
  * for all game aspects.
  */
 
-
-/**
- * Import assets from the Three.js library under 
- * the alias 'THREE'
- */
+/* Import utilities from THREE.js library */
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /**
  * Import external game functions.
  */
 import { generateEnemy, generateNPC, generatePlayer } from './gameAvatars';
+import { loadLevel1 } from './level1Loader';
 
 /*** GAME CONTROLLER ***/
 
@@ -120,9 +116,6 @@ const far = 200;
 
 /*** GAME PROPERTIES ***/
 
-// Game length.
-const GAME_LENGTH = 1000;
-
 // Time.
 let gameTimer = 0; 
 
@@ -145,7 +138,6 @@ let levelCleared = false;
 
 let playerObject_Global;
 let enemyObject_Global;
-
 /*** LEVEL INITIALISATION ***/
 
 async function initialiseLevel1(){
@@ -166,29 +158,41 @@ async function initialiseLevel1(){
     scene_Global = scene;
     camera_Global = camera;
 
-    /* Level Features */
+    /* Level Properties */
 
-    // Lighting.
-    const ambientLight = new THREE.AmbientLight(0xE1E1FF, 2.0);
-    scene.add(ambientLight);
+    // Generate level.
+    const level1SceneObjects = await loadLevel1();
+    for(let item of level1SceneObjects){
+        scene.add(item);
+    }
 
-    // Define road plane.
-    const roadGeometry = new THREE.PlaneGeometry(8, 750);
+    /* Avatars */
 
-    // Asphalt texture.
-    const asphaltTexture = new THREE.TextureLoader().load('./assets/AsphaltTexture.jpg');
+    // Player - Generate and add to scene 
+    const playerObject = await generatePlayer();
 
-    // Wrap texture.
-    asphaltTexture.wrapS = THREE.RepeatWrapping;
-    asphaltTexture.wrapT = THREE.RepeatWrapping;
-    asphaltTexture.repeat.set(1, 20)
+    for(let item of playerObject.sceneObjects){
+        scene.add(item);
+    }
 
-    const roadMaterial = new THREE.MeshPhongMaterial({map: asphaltTexture, side: THREE.DoubleSide});
-    const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
-    roadMesh.rotateX(Math.PI / 2);
-    roadMesh.position.set(0, -1, -250);
-    scene.add(roadMesh);
+    // Store in global variable.
+    playerObject_Global = playerObject;
 
+    // Enemy - Generate and add to scene.
+    const enemyObject = await generateEnemy();
+
+    for(let item of enemyObject.sceneObjects){
+        scene.add(item);
+    }
+
+    // Store in global variable
+    enemyObject_Global = enemyObject;
+
+    // Call animation loop.
+    animate();
+}
+
+function level2(){
     // Define sidewalk planes.
     const sideWalkGeometry = new THREE.BoxGeometry(1, 750, 1.5);
 
@@ -203,48 +207,6 @@ async function initialiseLevel1(){
     const sidewalkMaterial = new THREE.MeshPhongMaterial({map: concreteTexture, side: THREE.DoubleSide});
     const sidewalkLeft = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
     const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
-
-    // Left sidewalk.
-    sidewalkLeft.rotateX(Math.PI / 2);
-    sidewalkLeft.position.set(-4.5, -1, -250)
-    scene.add(sidewalkLeft);
-
-    // Right sidewalk.
-    sidewalkRight.rotateX(Math.PI / 2);
-    sidewalkRight.position.set(4.5, -1, -250)
-    scene.add(sidewalkRight);
-
-    // Objective.
-    const goalGeometry = new THREE.PlaneGeometry(8, 2);
-    const goalMaterial = new THREE.MeshPhongMaterial({color: 0x00FF00, side: THREE.DoubleSide, opacity: 0.5, transparent: true});
-    const goalMesh = new THREE.Mesh(goalGeometry, goalMaterial);
-    goalMesh.position.set(0, 0, -500);
-    scene.add(goalMesh);
-
-    /* Avatars */
-
-    /* Player - Generate and add to scene */
-    const playerObject = await generatePlayer();
-
-    for (let item of playerObject.sceneObjects){
-        scene.add(item);
-    }
-
-    // Store in global variable.
-    playerObject_Global = playerObject;
-
-    /* Enemy - Generate and add to scene. */
-    const enemyObject = await generateEnemy();
-
-    for (let item of enemyObject.sceneObjects){
-        scene.add(item);
-    }
-
-    // Store in global variable
-    enemyObject_Global = enemyObject;
-
-    // Call animation loop.
-    animate();
 }
 
 initialiseLevel1();

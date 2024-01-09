@@ -9,15 +9,11 @@
  * main game script for manipulation.
  */
 
-/**
- * Import assets from the Three.js library under 
- * the alias 'THREE'
- */
+/* Import utilities from THREE.js library */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* Global Properties */
-const carGeometry = new THREE.BoxGeometry(2, 1, 3);
 const BLENDER_SCALE_FACTOR = 0.45;
 const HEAD_LIGHT_COLOUR = 0xFFFFA9;
 
@@ -34,7 +30,7 @@ export function generatePlayer(){
         /* Load Player car model */
         const loader = new GLTFLoader();
 
-        loader.load('./assets/PlayerCar.glb', function(glb) {
+        loader.load('./assets/models/PlayerCar.glb', function(glb) {
             const playerMesh = glb.scene;
 
             // Scale model.
@@ -44,8 +40,8 @@ export function generatePlayer(){
             const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
     
             // Head lights.
-            const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 8);
-            const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 8);
+            const leftHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 10);
+            const rightHeadlight = new THREE.SpotLight(HEAD_LIGHT_COLOUR, 10);
     
             const headlights = [];
     
@@ -95,7 +91,7 @@ export function generateEnemy(){
         /* Load Police car model */
         const loader = new GLTFLoader();
 
-        loader.load('./assets/PoliceCar.glb', function(glb) {
+        loader.load('./assets/models/PoliceCar.glb', function(glb) {
             const enemyMesh = glb.scene;
 
             // Scale model.
@@ -171,7 +167,7 @@ export function generateNPC(positionProbability, playerPositionZ) {
 
         /* Load NPC model */
         const loader = new GLTFLoader();
-        loader.load('./assets/NPCcar.glb', function (glb) {
+        loader.load('./assets/models/NPCcar.glb', function (glb) {
            const npcMesh = glb.scene;
 
            // Scale model.
