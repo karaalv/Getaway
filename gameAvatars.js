@@ -177,7 +177,8 @@ export function generateNPC(positionProbability, playerPositionZ) {
             const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
             // NPC speed - Random variable.
-            let speed = Math.floor(Math.random() * 5) + 25;
+            // let speed = Math.floor(Math.random() * 5) + 15;
+            let speed = 20;
 
             // NPC position - Sine curve variation.
             let randomX;
@@ -185,6 +186,7 @@ export function generateNPC(positionProbability, playerPositionZ) {
 
             if (positionProbability > 0) {
                 randomX = -1.5;
+                speed *= 2.5;
             } else {
                 randomX = 1.5;
                 speed *= -1;

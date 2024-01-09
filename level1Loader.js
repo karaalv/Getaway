@@ -14,10 +14,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const BLENDER_SCALE_FACTOR = 0.45;
 const ENLARGEMENT_SCALE_FACTOR = 4;
 
-const GAME_LENGTH = 750;
+const GAME_LENGTH = -500; // actual: -1000 test: -500
+const ROAD_LENGTH = 750; // actual: 1500 test: 750
+const ROAD_MIDDLE_POSITION = -250; // actual: -700 test: -250
 
 // Variables used to coordinate environment generation.
-let sharedZ = -10;
+let sharedZ = -15;
 let positionBias = true;
 
 /**
@@ -36,7 +38,7 @@ export async function loadLevel1(){
     meshArray.push(ambientLight);
 
     // Define road plane.
-    const roadGeometry = new THREE.PlaneGeometry(8, 750);
+    const roadGeometry = new THREE.PlaneGeometry(8, ROAD_LENGTH);
 
     // Road material.
     const roadMaterial = new THREE.MeshPhysicalMaterial({
@@ -46,11 +48,11 @@ export async function loadLevel1(){
 
     const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
     roadMesh.rotateX(Math.PI / 2);
-    roadMesh.position.set(0, -1, -250);
+    roadMesh.position.set(0, -1, ROAD_MIDDLE_POSITION);
     meshArray.push(roadMesh)
 
     // Define sidewalk planes.
-    const sideWalkGeometry = new THREE.BoxGeometry(1, 750, 1.5);
+    const sideWalkGeometry = new THREE.BoxGeometry(1, ROAD_LENGTH, 1.5);
 
     const sidewalkMaterial = new THREE.MeshPhongMaterial({
         color: 0xffffff,
@@ -62,29 +64,29 @@ export async function loadLevel1(){
 
     // Left sidewalk.
     sidewalkLeft.rotateX(Math.PI / 2);
-    sidewalkLeft.position.set(-4.5, -1, -250);
+    sidewalkLeft.position.set(-4.5, -1, ROAD_MIDDLE_POSITION);
     meshArray.push(sidewalkLeft);
 
     // Right sidewalk.
     sidewalkRight.rotateX(Math.PI / 2);
-    sidewalkRight.position.set(4.5, -1, -250)
+    sidewalkRight.position.set(4.5, -1, ROAD_MIDDLE_POSITION)
     meshArray.push(sidewalkRight);
 
     // Objective.
     const goalGeometry = new THREE.PlaneGeometry(8, 2);
     const goalMaterial = new THREE.MeshPhongMaterial({color: 0x00FF00, side: THREE.DoubleSide, opacity: 0.5, transparent: true});
     const goalMesh = new THREE.Mesh(goalGeometry, goalMaterial);
-    goalMesh.position.set(0, 0, -500);
+    goalMesh.position.set(0, 0, GAME_LENGTH);
     meshArray.push(goalMesh);
 
     // Flat plane for world building.
-    const levelPlaneGeometry = new THREE.PlaneGeometry(1000, 1000);
+    const levelPlaneGeometry = new THREE.PlaneGeometry(1500, 1500);
     const retroTexture = new THREE.TextureLoader().load('./assets/textures/retroTexture.jpg');
 
     const levelPlaneMaterial = new THREE.MeshPhongMaterial({map: retroTexture, side: THREE.DoubleSide});
     const levelPlane = new THREE.Mesh(levelPlaneGeometry, levelPlaneMaterial);
     levelPlane.rotateX(Math.PI / 2);
-    levelPlane.position.set(0, -1.5, -250);
+    levelPlane.position.set(0, -1.5, ROAD_MIDDLE_POSITION);
     meshArray.push(levelPlane);
 
 
@@ -101,7 +103,7 @@ export async function loadLevel1(){
  * @returns Array of environment meshes.
  */
 async function getLevel1Environment(){
-    const number = 20;
+    const number = 10;
     const environmentArray = [];
     let data;
 
@@ -139,8 +141,7 @@ function getRetroPalmTree() {
             } else {
                 positionBias = true;
             }
-            // const randZ = - Math.floor(Math.random() * GAME_LENGTH);
-            sharedZ -= 20;
+            sharedZ -= 100;
             const randZ = sharedZ
 
             mesh.position.set(randX, -1, randZ);

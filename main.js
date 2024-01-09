@@ -119,12 +119,15 @@ const far = 200;
 // Time.
 let gameTimer = 0; 
 
+// Length.
+const GAME_LENGTH = -500;
+
 // Speed.
-const playerHorizontalSpeed = 15.0;
-const playerForwardSpeed = 8.0;
+const playerHorizontalSpeed = 20.0;
+let playerForwardSpeed = 30.0;
 
 // NPC behaviour.
-const spawnRate = 120;
+const spawnRate = 90;
 const positionFrequency = 0.75;
 const npcArray = [];
 
@@ -240,7 +243,8 @@ function animate(){
     /* Environment */
 
     // Add NPCs to level at defined spawn rate.
-    if(levelCleared == false){
+    // Pause NPC spawn as player approaches goal.
+    if(playerMesh.position.z - 100 > GAME_LENGTH){
         if(gameTimer % spawnRate == 0){
             populateLevel({playerMesh: playerMesh});
         }
@@ -265,10 +269,11 @@ function animate(){
  * @param delta 
  */
 function updatePlayerPosition({playerMesh, delta}){
-    // console.log(playerMesh.position.z)
+
     // End level if goal reached.
-    if(playerMesh.position.z < -500){
+    if(playerMesh.position.z < GAME_LENGTH){
         levelCleared = true;
+        playerForwardSpeed = 10;
     }
 
     // Move left.
@@ -312,7 +317,7 @@ function updateEnvironment({delta, playerPositionX}){
     /* Enemy object */
 
     const enemyMesh = enemyObject_Global.mesh;
-    const followSpeed = 4.5;
+    const followSpeed = 5.0;
 
     // Enemy forward motion.
     if(levelCleared == false ){
@@ -369,9 +374,12 @@ function updateEnvironment({delta, playerPositionX}){
  * @param playerMesh 
  */
 async function populateLevel({playerMesh}){
+    // Convert game timer to radians.
+    const fraction = gameTimer / 60;
+    const radians = (Math.sqrt(3) / 2 ) * fraction
 
     // Compute position of NPC.
-    const positionProbability = Math.round(Math.sin(positionFrequency * gameTimer));
+    const positionProbability = Math.round(Math.sin(positionFrequency * radians));
 
     // Instantiate NPC, add NPC to scene.
     let npc = await generateNPC(positionProbability, playerMesh.position.z);
@@ -391,7 +399,7 @@ function updateCameraPerspective({playerMesh, delta}){
         camera_Global.position.z += 6 * delta;
         camera_Global.position.x = 0;
         camera_Global.position.y += 4 * delta;
-        setInterval(closeLevel, 10000);
+        setInterval(closeLevel, 7000);
     } else {
         if(firstPerson){
             // First person properties.
