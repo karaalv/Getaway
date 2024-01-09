@@ -26,9 +26,49 @@
         </div>
 
         <!-- Game menu. -->
-        <div id="Game-menu" style="display: none;">
+        <div id="Game-menu" class="game-Text" style="display: block; color: #000000;">
             <h1>Getaway</h1>
-            <p>Game Paused</p>
+            <h2 id="Paused-text" style="display: none;">Game Paused</h2>
+            <h2>Instructions</h2>
+            <P>Welcome to Getaway! Your goal is to drive as fast as you can to get away from the cops.</P>
+            <P>But watch out for other cars, use the keyboard buttons <span class="icon-container"><img width="50" height="50" src="./assets/icons/A_ButtonIcon.png" alt="A"></span>
+                and <span class="icon-container"><img width="50" height="50" src="./assets/icons/D_ButtonIcon.png" alt="D"></span> to swerve through traffic and get to the objective!
+            </P>
+            <p>Want more of a challenge? Toggle first person mode with <span class="icon-container"><img width="50" height="50" src="./assets/icons/C_ButtonIcon.png" alt="C"></span>
+                and put your driving skills to the test.
+            </p>
+            <p>Press <span class="icon-container"><img width="50" height="50" src="./assets/icons/P_ButtonIcon.png" alt="P"></span> to pause the game or alternatively click the menu icon.</p>
+        </div>
+
+        <!-- Return to level select -->
+        <div id="Level-escape" style="display: none;">
+            <p>Press <span class="icon-container"><img width="60" height="50" src="./assets/icons/ESC_ButtonIcon.png" alt="esc"></span> to return to level select</p>
+        </div>
+
+        <!-- Game failed screen. -->
+        <div id="Game-failed" class="game-Text" style="display: none; color: #FF0000;">
+            <h1>Wrecked !</h1>
+            <h2>Press <span class="icon-container"><img width="50" height="50" src="./assets/icons/R_ButtonIcon.png" alt="R"></span> to restart.</h2>
+        </div>
+
+        <!-- Game cleared screen. -->
+        <div id="Game-cleared" class="game-Text" style="display: none; color: #FF6C11;">
+            <h1>Level Cleared</h1>
+            <h2>Press <span class="icon-container"><img width="50" height="50" src="./assets/icons/R_ButtonIcon.png" alt="R"></span> to restart level.</h2>
+        </div>
+
+        <!-- Level selector -->
+        <div id="Level-panel" style="display: block;">
+            <h1 style="font-family: Arial, Helvetica, sans-serif; opacity: 0.8;">Select a level</h1>
+
+            <div class="button-container">
+                <button id="Level1-button" class="level-button" style="background-color: #920075; border-color:#2DE2E6 ;">
+                    Level 1: Retro Love
+                </button>
+                <button id="Level2-button" class="level-button">
+                    Level 2: City Skylines
+                </button>
+            </div>
         </div>
 
     </body>

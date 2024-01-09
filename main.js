@@ -14,84 +14,9 @@ import * as THREE from 'three';
 import { generateEnemy, generateNPC, generatePlayer } from './gameAvatars';
 import { loadLevel1 } from './level1Loader';
 
-/*** GAME CONTROLLER ***/
+/*** GLOBAL VARIABLES ***/
 
-/**
- * Game state is measured alongside 
- * menu sate, when menu is active 
- * game is paused.
- */
-
-// Menu controller variables.
-const gameMenu = document.getElementById('Game-menu');
-const gameMenuButton = document.getElementById('Menu-button');
-const keyStates =[];
-// let menuActive = true;
-// let gameActive = !menuActive;
-
-let menuActive = false;
-let gameActive = true;
-
-/*** CALLBACK FUNCTIONS ***/
-
-/**
- * Callback functions used to display game menu
- * and control game state.
- */
-function activateMenu(){
-    menuActive = true;
-    gameActive = false;
-    gameMenu.style.display = 'block';
-}
-//
-function deactivateMenu(){
-    menuActive = false;
-    gameActive = true;
-
-    gameMenu.style.display = 'none';
-    initialiseLevel1();
-}
-
-
-/*** WINDOW LISTENERS AND CALLBACKS ***/ 
-
-// Toggle game menu listener.
-gameMenuButton.addEventListener('click', () => {
-    if(gameActive){
-        activateMenu();
-    } else {
-        deactivateMenu();
-    }
-});
-
-// Keyboard input listener.
-window.addEventListener('keydown', keyDown);
-window.addEventListener('keyup', keyUp);
-
-// Press key.
-function keyDown(event){
-    keyStates[event.code] = true;
-
-    // Pause game.
-    if(event.code == 'KeyP'){
-        gameActive = !gameActive;
-        if(gameActive){
-            animate();
-        }
-    }
-
-    // Toggle camera perspective.
-    if(event.code == 'KeyC'){
-        firstPerson = !firstPerson;
-    }
-}
-
-// Release key.
-function keyUp(event){
-    keyStates[event.code] = false;
-}
-
-/*** THREE.js GLOBAL VARIABLES ***/
+/* THREE.js Properties */
 
 // Game canvas.
 const canvas = document.getElementById("canvas");
@@ -99,11 +24,11 @@ const canvas = document.getElementById("canvas");
 // Game renderer.
 const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 
+// Scene.
+const scene = new THREE.Scene();
+
 // Game clock.
 const gameClock = new THREE.Clock();
-
-// Global scene.
-let scene_Global;
 
 // Global camera.
 let camera_Global;
@@ -114,7 +39,7 @@ const aspectRatio = window.innerWidth / window.innerHeight;
 const near = 0.1;
 const far = 200;
 
-/*** GAME PROPERTIES ***/
+/* Game Properties */
 
 // Time.
 let gameTimer = 0; 
@@ -136,11 +61,231 @@ let firstPerson = false;
 
 // Level completion.
 let levelCleared = false;
+let levelFailed = false;
 
-/*** GAME AVATARS ***/
-
+// Game avatars.
 let playerObject_Global;
 let enemyObject_Global;
+
+/*** GAME CONTROLLER ***/
+
+// Game control variables.
+const gameMenu = document.getElementById('Game-menu');
+const gamePausedText = document.getElementById('Paused-text');
+const gameFailed = document.getElementById('Game-failed');
+const gameCleared = document.getElementById('Game-cleared');
+const levelSelectPanel = document.getElementById('Level-panel');
+const levelEscapePrompt = document.getElementById('Level-escape');
+
+const gameMenuButton = document.getElementById('Menu-button');
+const level1Button = document.getElementById('Level1-button');
+const level2Button = document.getElementById('Level2-button');
+
+
+const keyStates =[];
+
+let menuActive = true;
+let failScreenActive = false;
+let successScreenActive = false;
+let gameActive = false;
+
+/* Game State Callbacks */
+
+/**
+ * Callback functions used to display game screens
+ * and control game state.
+ */
+
+// Adjust menu color scheme for level.
+function setLevel1Colours(){
+    gameMenu.style.color = '#FFFFFF';
+    gameMenuButton.style.color = '#FFFFFF';
+    document.getElementById('Menu-button-container').style.borderBottomColor = '#FFFFFF';
+}
+
+// Render level select screen.
+function returnToLevelSelect(){
+    clearGameState();
+    gameMenu.style.color = '#000000';
+    gameMenuButton.style.color = '#000000';
+    document.getElementById('Menu-button-container').style.borderBottomColor = '#000000';
+    activateMenu();
+    activateLevelSelect();
+    levelEscapePrompt.style.display = 'none';
+    gamePausedText.style.display = 'none';
+}
+
+// Start level 1 callback.
+function startLevel1(){
+    setLevel1Colours();
+    deactivateLevelSelect();
+
+    if(menuActive == true){
+        deactivateMenu();
+    }
+    clearGameState();
+
+    gameActive = true;
+    initialiseLevel1();
+}
+
+// Pause game callback.
+function pauseGame(){
+    if(levelCleared){
+        console.log('no')
+        return;
+    } else {
+        gameActive = false;
+        gameClock.stop();
+        gamePausedText.style.display = 'block';
+        activateMenu();
+    }
+}
+
+// Resume game callback.
+function resumeGame(){
+    gameActive = true;
+    gameClock.start();
+    gamePausedText.style.display = 'none';
+    deactivateMenu();
+    animate();
+}
+
+// Restart game callback.
+function restartGame(){
+    // Toggle screens.
+    if(failScreenActive == true){
+        deactivateFailScreen();
+    }
+    if(successScreenActive == true){
+        deactivateSuccessScreen();
+    }
+    if(menuActive == true){
+        deactivateMenu();
+    }
+
+    clearGameState();
+
+    initialiseLevel1();
+}
+
+// Restart game sate
+function clearGameState(){
+    scene.clear();
+    renderer.clear();
+
+    npcArray.length = 0;
+    playerForwardSpeed = 30.0;
+    levelFailed = false;
+    levelCleared = false;
+    gameActive = true;
+    firstPerson = false;
+    gameTimer = 0;
+}
+
+// Menu.
+function activateMenu(){
+    menuActive = true;
+    gameMenu.style.display = 'block';
+    levelEscapePrompt.style.display = 'block';
+}
+
+function deactivateMenu(){
+    menuActive = false;
+    gameMenu.style.display = 'none';
+    levelEscapePrompt.style.display = 'none';
+}
+
+// Success screen.
+function activateSuccessScreen(){
+    successScreenActive = true;
+    gameCleared.style.display = 'block';
+}
+
+function deactivateSuccessScreen(){
+    successScreenActive = false;
+    gameCleared.style.display = 'none';
+}
+
+// Failure screen.
+function activateFailScreen(){
+    failScreenActive = true;
+    gameFailed.style.display = 'block';
+}
+
+function deactivateFailScreen(){
+    failScreenActive = false;
+    gameFailed.style.display = 'none';
+}
+
+// Level select panel.
+function activateLevelSelect(){
+    levelSelectPanel.style.display = 'block';
+}
+
+function deactivateLevelSelect(){
+    levelSelectPanel.style.display = 'none';
+}
+
+/*** WINDOW LISTENERS AND CALLBACKS ***/ 
+
+// Toggle game menu listener.
+gameMenuButton.addEventListener('click', () => {
+    if(gameActive == true){
+        pauseGame();
+    } else {
+        resumeGame();
+    }
+});
+
+// Start level 1 listener.
+level1Button.addEventListener('click', () => {
+    startLevel1();
+})
+
+// Keyboard input listener.
+window.addEventListener('keydown', keyDown);
+window.addEventListener('keyup', keyUp);
+
+// Press key.
+function keyDown(event){
+
+    keyStates[event.code] = true;
+
+    // Pause game.
+    if(event.code == 'KeyP'){
+        if(gameActive == true){
+            pauseGame();
+        } else {
+            resumeGame();
+        }
+    }
+
+    // Restart game.
+    if(event.code == 'KeyR'){
+        if(levelFailed || levelCleared){
+            restartGame();
+        }
+    }
+
+    // Escape to level select.
+    if(event.code == 'Escape'){
+        if(menuActive){
+            returnToLevelSelect();
+        }
+    }
+
+    // Toggle camera perspective.
+    if(event.code == 'KeyC'){
+        firstPerson = !firstPerson;
+    }
+}
+
+// Release key.
+function keyUp(event){
+    keyStates[event.code] = false;
+}
+
 /*** LEVEL INITIALISATION ***/
 
 async function initialiseLevel1(){
@@ -148,7 +293,6 @@ async function initialiseLevel1(){
     /* THREE JS Properties */
 
     // Define scene.
-    const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000021);
 
     // Define camera and camera position.
@@ -158,7 +302,6 @@ async function initialiseLevel1(){
     // Define renderer.
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    scene_Global = scene;
     camera_Global = camera;
 
     /* Level Properties */
@@ -212,52 +355,51 @@ function level2(){
     const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
 }
 
-initialiseLevel1();
-
 
 /*** ANIMATION LOOP ***/
 function animate(){
-
     // If game state is off, pause game.
-    if(!gameActive){
+    if(gameActive == false){
         console.log('game paused')
+        console.log(gameActive)
         return;
-    }
+    } else {
+        /* Animation variables */
 
-    /* Animation variables */
+        // Player mesh for local scope.
+        const playerMesh = playerObject_Global.mesh;
 
-    // Player mesh for local scope.
-    const playerMesh = playerObject_Global.mesh;
+        // Time delta for smooth movement.
+        const delta = gameClock.getDelta();
 
-    // Time delta for smooth movement.
-    const delta = gameClock.getDelta();
+        /* Player Movement */
 
-    /* Player Movement */
+        updatePlayerPosition({delta: delta, playerMesh: playerMesh});
 
-    updatePlayerPosition({delta: delta, playerMesh: playerMesh});
+        /* Camera Control */
 
-    /* Camera Control */
+        updateCameraPerspective({playerMesh: playerMesh, delta: delta});
 
-    updateCameraPerspective({playerMesh: playerMesh, delta: delta});
+        /* Environment */
 
-    /* Environment */
-
-    // Add NPCs to level at defined spawn rate.
-    // Pause NPC spawn as player approaches goal.
-    if(playerMesh.position.z - 100 > GAME_LENGTH){
-        if(gameTimer % spawnRate == 0){
-            populateLevel({playerMesh: playerMesh});
+        // Add NPCs to level at defined spawn rate.
+        // Pause NPC spawn as player approaches goal.
+        if(playerMesh.position.z - 100 > GAME_LENGTH){
+            if(gameTimer % spawnRate == 0){
+                populateLevel({playerMesh: playerMesh});
+            }
         }
+
+        // Update NPC positions.
+        updateEnvironment({delta: delta, playerPositionX: playerMesh.position.x});
+
+        // Update game timer after each frame.
+        gameTimer++;
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera_Global);
     }
 
-    // Update NPC positions.
-    updateEnvironment({delta: delta, playerPositionX: playerMesh.position.x});
-
-    // Update game timer after each frame.
-    gameTimer++;
-
-    requestAnimationFrame(animate);
-    renderer.render(scene_Global, camera_Global);
 }
 
 
@@ -361,8 +503,7 @@ function updateEnvironment({delta, playerPositionX}){
         // NPC collision.
         npc.boundingBox.setFromObject(npc.mesh);
         if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
-            console.log('collision');
-            // gameActive = false;
+            crashHandler();
         }
 
     }
@@ -383,7 +524,7 @@ async function populateLevel({playerMesh}){
 
     // Instantiate NPC, add NPC to scene.
     let npc = await generateNPC(positionProbability, playerMesh.position.z);
-    scene_Global.add(npc.mesh);
+    scene.add(npc.mesh);
 
     npcArray.push(npc);
 }
@@ -399,7 +540,12 @@ function updateCameraPerspective({playerMesh, delta}){
         camera_Global.position.z += 6 * delta;
         camera_Global.position.x = 0;
         camera_Global.position.y += 4 * delta;
-        setInterval(closeLevel, 7000);
+
+        // Use game timer to define closing camera pan.
+        if(gameTimer % 480 == 0){
+            closeLevel()
+        }
+
     } else {
         if(firstPerson){
             // First person properties.
@@ -421,5 +567,14 @@ function updateCameraPerspective({playerMesh, delta}){
  */
 function closeLevel(){
     gameActive = false;
-    activateMenu();
+    activateSuccessScreen();
+}
+
+/**
+ * Callback used when detecting crash.
+ */
+function crashHandler(){
+    gameActive = false;
+    levelFailed = true;
+    activateFailScreen();
 }
