@@ -46,7 +46,7 @@ export function generatePlayer(){
             const headlights = [];
     
             /* Initial Position */
-            playerMesh.position.set(1.5, -1, 0);
+            playerMesh.position.set(5.5, -1, 0);
     
             // Bounding box.
             boundingBox.setFromObject(playerMesh);
@@ -159,9 +159,9 @@ export function generateEnemy(){
  * Function used to generate NPC avatar.
  * @param positionProbability 
  * @param playerPositionZ 
- * @returns NPC Mesh
+ * @returns NPC object data
  */
-export function generateNPC(positionProbability, playerPositionZ) {
+export function generateNPC({positionProbability, playerPositionZ}) {
     // Handle asynchronous loading.
     return new Promise((resolve, reject) => {
 
@@ -177,7 +177,6 @@ export function generateNPC(positionProbability, playerPositionZ) {
             const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
             // NPC speed - Random variable.
-            // let speed = Math.floor(Math.random() * 5) + 15;
             let speed = 20;
 
             // NPC position - Sine curve variation.
@@ -219,3 +218,53 @@ export function generateNPC(positionProbability, playerPositionZ) {
     });
 }
 
+/**
+ * Function used to generate NPC avatar.
+ * @param position
+ * @param playerPositionZ
+ * @returns NPC object data
+ */
+export function generateNPCWithPosition({position, playerPositionZ}) {
+    // Handle asynchronous loading.
+    return new Promise((resolve, reject) => {
+
+        /* Load NPC model */
+        const loader = new GLTFLoader();
+        loader.load('./assets/models/NPCcar.glb', function (glb) {
+           const npcMesh = glb.scene;
+
+           // Scale model.
+           npcMesh.scale.set(BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR);
+
+            // Bounding box.
+            const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+
+            // NPC speed - Random variable.
+            let speed = 20;
+
+            // NPC position - Sine curve variation.
+            let spawnPoint;
+
+            if (position == -5.5 || position == 5.5) {
+                speed *= 2.5;
+                spawnPoint = playerPositionZ + 50
+            } else {
+                speed *= -1;
+                spawnPoint = playerPositionZ - 150 
+                npcMesh.rotateY(Math.PI)
+            }
+
+            // Set NPC position.
+            npcMesh.position.set(position, -1, spawnPoint);
+            boundingBox.setFromObject(npcMesh);
+
+            const npcObject = {
+                mesh: npcMesh,
+                speed: speed,
+                boundingBox: boundingBox,
+            };
+
+            resolve(npcObject);
+        });
+    });
+}

@@ -11,7 +11,7 @@ import * as THREE from 'three';
 /**
  * Import external game functions.
  */
-import { generateEnemy, generateNPC, generatePlayer } from './gameAvatars';
+import { generateEnemy, generateNPC, generateNPCWithPosition, generatePlayer } from './gameAvatars';
 import { loadLevel1, getRetroPalmTree } from './level1Loader';
 import { getBuilding, getCloud, loadLevel2 } from './level2Loader';
 
@@ -48,13 +48,16 @@ let gameTimer = 0;
 // Length.
 const GAME_LENGTH = -500;
 
+// Boundary,
+let gameBoundary;
+
 // Speed.
 const playerHorizontalSpeed = 20.0;
 let playerForwardSpeed = 30.0;
 
 // NPC behaviour.
-const npcSpawnRate = 90;
-const positionFrequency = 0.75;
+let npcSpawnRate;
+let positionFrequency;
 const npcArray = [];
 
 // Environment.
@@ -141,6 +144,7 @@ function returnToLevelSelect(){
     }
 
     clearGameState();
+    currentLevel = 'none';
 
     setLevelSelectColours();
 
@@ -382,7 +386,12 @@ window.addEventListener('resize', () => {
 // Level 1.
 async function initialiseLevel1(){
     console.log('drawing level 1')
+    /* Level conditions */
     currentLevel = '1';
+    gameBoundary = 2.5;
+    npcSpawnRate = 90;
+    positionFrequency = 0.75;
+
     /* THREE JS Properties */
 
     // Define scene.
@@ -437,7 +446,13 @@ async function initialiseLevel1(){
 // Level 2.
 async function initialiseLevel2(){
     console.log('drawing level 2')
-    currentLevel = '2'
+
+    /* Level conditions */
+    currentLevel = '2';
+    gameBoundary = 5.5;
+    npcSpawnRate = 90;
+    positionFrequency = 1;
+
     /* THREE JS Properties */
 
     // Define scene.
@@ -488,6 +503,7 @@ async function initialiseLevel2(){
     // Call animation loop.
     animate();
 }
+startLevel2()
 
 /*** ANIMATION LOOP ***/
 function animate(){
@@ -521,13 +537,17 @@ function animate(){
         // Pause NPC spawn as player approaches goal.
         if(playerMesh.position.z - 100 > GAME_LENGTH){
             if(gameTimer % npcSpawnRate == 0){
-                populateLevel({playerMesh: playerMesh});
+                if(currentLevel == '1'){
+                    populateLevel1({playerMesh: playerMesh});
+                } else if (currentLevel == '2'){
+                    populateLevel2({playerMesh: playerMesh})
+                }
             }
 
             if(gameTimer % environmentSpawnRate == 0){
                 if(currentLevel == '1'){
                     renderLevel1Environment({playerPositionZ: playerMesh.position.z});
-                } else {
+                } else if (currentLevel == '2') {
                     renderLevel2Environment({playerPositionZ: playerMesh.position.z});
                 }
             }
@@ -566,14 +586,14 @@ function updatePlayerPosition({playerMesh, delta}){
     // Move left.
     if(keyStates['KeyA']){
         // Define player boundary.
-        if(playerMesh.position.x > -2.5){
+        if(playerMesh.position.x > - gameBoundary){
             playerMesh.position.x -= playerHorizontalSpeed * delta;
         }
     }
     // Move right.
     if(keyStates['KeyD']){ 
         // Define player boundary.
-        if(playerMesh.position.x < 2.5){
+        if(playerMesh.position.x < gameBoundary){
             playerMesh.position.x += playerHorizontalSpeed * delta;
         }
     }
@@ -655,7 +675,7 @@ function updateEnvironment({delta, playerPositionX, playerPositionZ}){
                 // NPC collision.
                 npc.boundingBox.setFromObject(npc.mesh);
                 if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
-                    crashHandler();
+                    // crashHandler();
                 }
             }
         }
@@ -667,22 +687,55 @@ function updateEnvironment({delta, playerPositionX, playerPositionZ}){
 }
 
 /**
- * Callback used to add NPC objects to scene.
+ * Callback used to add NPC objects to level
+ * 1.
  * @param playerMesh 
  */
-async function populateLevel({playerMesh}){
+async function populateLevel1({playerMesh}){
     // Convert game timer to radians.
     const fraction = gameTimer / 60;
-    const radians = (Math.sqrt(3) / 2 ) * fraction
+    const radians = (Math.sqrt(3) / 2 ) * fraction;
 
     // Compute position of NPC.
     const positionProbability = Math.round(Math.sin(positionFrequency * radians));
 
     // Instantiate NPC, add NPC to scene.
-    let npc = await generateNPC(positionProbability, playerMesh.position.z);
+    let npc = await generateNPC({positionProbability: positionProbability, playerPositionZ: playerMesh.position.z});
     scene.add(npc.mesh);
 
     npcArray.push(npc);
+}
+
+/**
+ * Callback used to add NPC objects to level
+ * 2.
+ * @param playerMesh 
+ */
+async function populateLevel2({playerMesh}){
+    const fraction = gameTimer / 60;
+    const radians = (Math.sqrt(3) / 2 ) * fraction;
+    const playerZ = playerMesh.position.z;
+
+    let npc1;
+    let npc2;
+
+    // Compute position of NPC.
+    const positionProbability = Math.round(Math.sin(positionFrequency * radians));
+    if(positionProbability > 0){
+        npc1 = await generateNPCWithPosition({position: -1.5, playerPositionZ: playerZ});
+        npc2 = await generateNPCWithPosition({position: -5.5, playerPositionZ: playerZ});
+        npcArray.push(npc1);
+        scene.add(npc1.mesh);
+        npcArray.push(npc2);
+        scene.add(npc2.mesh);
+    } else {
+        npc1 = await generateNPCWithPosition({position: 5.5, playerPositionZ: playerZ});
+        npc2 = await generateNPCWithPosition({position: 1.5, playerPositionZ: playerZ});
+        npcArray.push(npc1);
+        scene.add(npc1.mesh);
+        npcArray.push(npc2);
+        scene.add(npc2.mesh);
+    }
 }
 
 /**
@@ -738,7 +791,7 @@ function crashHandler(){
  * out of clipping region. 
  * @param playerPositionZ
  */
-function garbageCollector({playerPositionZ}){
+async function garbageCollector({playerPositionZ}){
     scene.children.forEach((child) =>{
         if((child.position.z > playerPositionZ + 50) || (child.position.z < playerPositionZ - 250) ){
             if(child instanceof THREE.Group || child instanceof THREE.SpotLight || (child instanceof THREE.Mesh && child.material.color == 0xC7C4BF)){

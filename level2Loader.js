@@ -40,7 +40,7 @@ export async function loadLevel2(){
     meshArray.push(ambientLight);
 
     // Define road plane.
-    const roadGeometry = new THREE.PlaneGeometry(8, ROAD_LENGTH);
+    const roadGeometry = new THREE.PlaneGeometry(16, ROAD_LENGTH);
 
     // Asphalt texture.
     const asphaltTexture = new THREE.TextureLoader().load('./assets/textures/AsphaltTexture.jpg');
@@ -82,16 +82,16 @@ export async function loadLevel2(){
 
     // Left sidewalk.
     sidewalkLeft.rotateX(Math.PI / 2);
-    sidewalkLeft.position.set(-4.5, -1, ROAD_MIDDLE_POSITION);
+    sidewalkLeft.position.set(-8.5, -1, ROAD_MIDDLE_POSITION);
     meshArray.push(sidewalkLeft);
 
     // Right sidewalk.
     sidewalkRight.rotateX(Math.PI / 2);
-    sidewalkRight.position.set(4.5, -1, ROAD_MIDDLE_POSITION)
+    sidewalkRight.position.set(8.5, -1, ROAD_MIDDLE_POSITION)
     meshArray.push(sidewalkRight);
 
     // Objective.
-    const goalGeometry = new THREE.PlaneGeometry(8, 2);
+    const goalGeometry = new THREE.PlaneGeometry(16, 2);
     const goalMaterial = new THREE.MeshPhongMaterial({color: 0x00FF00, side: THREE.DoubleSide, opacity: 0.5, transparent: true});
     const goalMesh = new THREE.Mesh(goalGeometry, goalMaterial);
     goalMesh.position.set(0, 0, GAME_LENGTH);
