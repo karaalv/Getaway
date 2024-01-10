@@ -14,15 +14,14 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const BLENDER_SCALE_FACTOR = 0.45;
 const ENLARGEMENT_SCALE_FACTOR = 15;
 
+const CLIPPING = 200;
+
 const GAME_LENGTH = -500; // actual: -1000 test: -500
 const ROAD_LENGTH = 750; // actual: 1500 test: 750
 const ROAD_MIDDLE_POSITION = -250; // actual: -700 test: -250
 
 // Variables used to coordinate environment generation.
-let buildingSharedZ = -15;
 let buildingPositionBias = true;
-
-let cloudSharedZ = -15;
 let cloudPositionBias = true;
 
 /**
@@ -98,39 +97,15 @@ export async function loadLevel2(){
     goalMesh.position.set(0, 0, GAME_LENGTH);
     meshArray.push(goalMesh);
 
-    /* Load environment features */
-    const environment = await getLevel2Environment();
-    for(let item of environment){
-        meshArray.push(item);
-    }
-
     return meshArray;
 }
 
 /**
- * @returns Array of environment meshes.
+ * Environment feature.
+ * @param playerPositionZ 
+ * @returns Building model.
  */
-async function getLevel2Environment(){
-    const number = 10;
-    const environmentArray = [];
-    let data;
-    let cloud;
-
-    for(let i = 0; i < number; i++){
-        data = await getBuilding();
-        cloud = await getCloud();
-        environmentArray.push(data.mesh);
-        environmentArray.push(cloud);
-    }
-    
-    buildingSharedZ = 0;
-    return environmentArray;
-}
-
-/**
- * @returns Loader for skyscraper models.
- */
-function getBuilding(){
+export async function getBuilding({playerPositionZ}){
     return new Promise((resolve, reject) => {
         /* Load retro palm tree model */
         const loader = new GLTFLoader();
@@ -151,11 +126,11 @@ function getBuilding(){
             } else {
                 buildingPositionBias = true;
             }
-            buildingSharedZ -= 100;
-            const randZ = buildingSharedZ
+
+            const posZ = playerPositionZ - CLIPPING
 
             const randY = Math.floor(Math.random() * (200 - 100 + 1)) + 100;
-            mesh.position.set(randX, -randY, randZ);
+            mesh.position.set(randX, -randY, posZ);
 
             const buildingObject = {
                 mesh: mesh,
@@ -167,14 +142,13 @@ function getBuilding(){
     })
 }
 
-async function getCloud(){
-    // Random cloud size.
-    const sizeMin = 30;
-    const sizeMax = 50;
+/**
+ * Environment feature.
+ * @param playerPositionZ
+ * @returns Cloud mesh.
+ */
+export async function getCloud({playerPositionZ}){
 
-    // const sizeX = Math.floor(Math.random() * (sizeMax - sizeMin + 1)) + sizeMin;
-    // const sizeY = Math.floor(Math.random() * (sizeMax - sizeMin + 1)) + sizeMin;
-    // const sizeZ = Math.floor(Math.random() * (sizeMax - sizeMin + 1)) + sizeMin;
     const sizeX = Math.floor(Math.random() * (30 - 5 + 1)) + 5;
     const sizeY = Math.floor(Math.random() * (15 - 5 + 1)) + 5;
     const sizeZ = 10;
@@ -201,10 +175,10 @@ async function getCloud(){
     } else {
         cloudPositionBias = true;
     }
-    cloudSharedZ -= 10;
-    const randZ = cloudSharedZ
 
-    cloudMesh.position.set(randX, -2, randZ);
+    const posZ = playerPositionZ - CLIPPING
+
+    cloudMesh.position.set(randX, -2, posZ);
 
     return cloudMesh;
 }

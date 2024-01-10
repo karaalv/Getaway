@@ -12,8 +12,8 @@ import * as THREE from 'three';
  * Import external game functions.
  */
 import { generateEnemy, generateNPC, generatePlayer } from './gameAvatars';
-import { loadLevel1 } from './level1Loader';
-import { loadLevel2 } from './level2Loader';
+import { loadLevel1, getRetroPalmTree } from './level1Loader';
+import { getBuilding, getCloud, loadLevel2 } from './level2Loader';
 
 /*** GLOBAL VARIABLES ***/
 
@@ -46,16 +46,19 @@ const far = 200;
 let gameTimer = 0; 
 
 // Length.
-const GAME_LENGTH = -200;
+const GAME_LENGTH = -500;
 
 // Speed.
 const playerHorizontalSpeed = 20.0;
 let playerForwardSpeed = 30.0;
 
 // NPC behaviour.
-const spawnRate = 90;
+const npcSpawnRate = 90;
 const positionFrequency = 0.75;
 const npcArray = [];
+
+// Environment.
+const environmentSpawnRate = 150;
 
 // Perspective.
 let firstPerson = false;
@@ -216,7 +219,9 @@ function restartGame(){
     } else if (currentLevel == '2'){
         initialiseLevel2();
     } else {
+        // Failsafe state management.
         console.log('state error');
+        returnToLevelSelect();
     }
 }
 
@@ -515,13 +520,21 @@ function animate(){
         // Add NPCs to level at defined spawn rate.
         // Pause NPC spawn as player approaches goal.
         if(playerMesh.position.z - 100 > GAME_LENGTH){
-            if(gameTimer % spawnRate == 0){
+            if(gameTimer % npcSpawnRate == 0){
                 populateLevel({playerMesh: playerMesh});
+            }
+
+            if(gameTimer % environmentSpawnRate == 0){
+                if(currentLevel == '1'){
+                    renderLevel1Environment({playerPositionZ: playerMesh.position.z});
+                } else {
+                    renderLevel2Environment({playerPositionZ: playerMesh.position.z});
+                }
             }
         }
 
         // Update NPC positions.
-        updateEnvironment({delta: delta, playerPositionX: playerMesh.position.x});
+        updateEnvironment({delta: delta, playerPositionX: playerMesh.position.x, playerPositionZ: playerMesh.position.z});
 
         // Update game timer after each frame.
         gameTimer++;
@@ -530,7 +543,6 @@ function animate(){
     }
 
 }
-
 
 /*** ANIMATION CALLBACK FUNCTIONS ***/
 
@@ -586,8 +598,9 @@ function updatePlayerPosition({playerMesh, delta}){
  * NPCs
  * @param delta
  * @param playerPositionX
+ * @param playerPositionZ
  */
-function updateEnvironment({delta, playerPositionX}){
+function updateEnvironment({delta, playerPositionX, playerPositionZ}){
 
     /* Enemy object */
 
@@ -630,17 +643,27 @@ function updateEnvironment({delta, playerPositionX}){
     /* NPC objects */
 
     for(let npc of npcArray){
-
-        // NPC movement.
-        npc.mesh.position.z -= npc.speed * delta;
-        // NPC collision.
-        npc.boundingBox.setFromObject(npc.mesh);
-        if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
-            crashHandler();
+        if(npc.mesh == null){
+            continue;
+        } else {
+            // IF NPC is out of game zone prepare for destruction.
+            if(npc.mesh.position.z > playerPositionZ + 75 || npc.mesh.position.z < playerPositionZ - 225){
+                npc.mesh = null;
+            } else {
+                // NPC movement.
+                npc.mesh.position.z -= npc.speed * delta;
+                // NPC collision.
+                npc.boundingBox.setFromObject(npc.mesh);
+                if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
+                    crashHandler();
+                }
+            }
         }
 
     }
 
+    /* OPTIMISATION */
+    garbageCollector({playerPositionZ: playerPositionZ})
 }
 
 /**
@@ -708,4 +731,43 @@ function crashHandler(){
     levelFailed = true;
     gameClock.stop();
     activateFailScreen();
+}
+
+/**
+ * Garbage collection for objects
+ * out of clipping region. 
+ * @param playerPositionZ
+ */
+function garbageCollector({playerPositionZ}){
+    scene.children.forEach((child) =>{
+        if((child.position.z > playerPositionZ + 50) || (child.position.z < playerPositionZ - 250) ){
+            if(child instanceof THREE.Group || child instanceof THREE.SpotLight || (child instanceof THREE.Mesh && child.material.color == 0xC7C4BF)){
+                scene.remove(child);
+                console.log('cleaned');
+            }
+        }
+    })
+}
+
+/**
+ * Asynchronous render of level 1.
+ * environment.
+ * @param playerPositionZ
+ */
+async function renderLevel1Environment({playerPositionZ}){
+    const retroTreeObject = await getRetroPalmTree({playerPositionZ: playerPositionZ});
+    scene.add(retroTreeObject.mesh);
+    scene.add(retroTreeObject.light);
+}
+
+/**
+ * Asynchronous render of level 2.
+ * @param playerPositionZ 
+ */
+async function renderLevel2Environment({playerPositionZ}){
+    const buildingObject = await getBuilding({playerPositionZ: playerPositionZ});
+    const cloudMesh = await getCloud({playerPositionZ: playerPositionZ});
+
+    scene.add(buildingObject.mesh);
+    scene.add(cloudMesh);
 }

@@ -14,12 +14,13 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const BLENDER_SCALE_FACTOR = 0.45;
 const ENLARGEMENT_SCALE_FACTOR = 4;
 
+const CLIPPING = 200;
+
 const GAME_LENGTH = -500; // actual: -1000 test: -500
-const ROAD_LENGTH = 750; // actual: 1500 test: 750
-const ROAD_MIDDLE_POSITION = -250; // actual: -700 test: -250
+const ROAD_LENGTH = 1500; // actual: 1500 test: 750
+const ROAD_MIDDLE_POSITION = -700; // actual: -700 test: -250
 
 // Variables used to coordinate environment generation.
-let sharedZ = -15;
 let positionBias = true;
 
 /**
@@ -89,38 +90,16 @@ export async function loadLevel1(){
     levelPlane.position.set(0, -1.5, ROAD_MIDDLE_POSITION);
     meshArray.push(levelPlane);
 
-
-    /* Load environment features */
-    const environment = await getLevel1Environment();
-    for(let item of environment){
-        meshArray.push(item);
-    }
-
     return meshArray;
 }
 
 /**
- * @returns Array of environment meshes.
+ * Returns palm tree model for environment 
+ * decoration.
+ * @param playerPositionZ 
+ * @returns 
  */
-async function getLevel1Environment(){
-    const number = 10;
-    const environmentArray = [];
-    let data;
-
-    for(let i = 0; i < number; i++){
-        data = await getRetroPalmTree();
-        environmentArray.push(data.mesh)
-        environmentArray.push(data.light)
-    }
-    
-    sharedZ = 0;
-    return environmentArray;
-}
-
-/**
- * @returns Loader for palm tree models.
- */
-function getRetroPalmTree() {
+export function getRetroPalmTree({playerPositionZ}) {
     return new Promise((resolve, reject) => {
         /* Load retro palm tree model */
         const loader = new GLTFLoader();
@@ -141,8 +120,7 @@ function getRetroPalmTree() {
             } else {
                 positionBias = true;
             }
-            sharedZ -= 100;
-            const randZ = sharedZ
+            const randZ = playerPositionZ - CLIPPING
 
             mesh.position.set(randX, -1, randZ);
 
