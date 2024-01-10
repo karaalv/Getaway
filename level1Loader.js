@@ -3,7 +3,7 @@
  * 
  * This file encapsulates the creation
  * of world building assets used in 
- * level 1: Retro World.
+ * level 1: Retro Love.
  */
 
 /* Import utilities from THREE.js library */

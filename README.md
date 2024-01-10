@@ -12,7 +12,7 @@ All relevant versions of dependencies are noted in the 'package.json' file. of<b
 note this project uses:<br>
 
     "three": "^0.160.0",
-    "vite": "^5.0.10"
+    "vite": "^5.0.11"
 
 Additionally, node.js must be installed in order to correctly run the project.
 

@@ -13,6 +13,7 @@ import * as THREE from 'three';
  */
 import { generateEnemy, generateNPC, generatePlayer } from './gameAvatars';
 import { loadLevel1 } from './level1Loader';
+import { loadLevel2 } from './level2Loader';
 
 /*** GLOBAL VARIABLES ***/
 
@@ -45,7 +46,7 @@ const far = 200;
 let gameTimer = 0; 
 
 // Length.
-const GAME_LENGTH = -500;
+const GAME_LENGTH = -200;
 
 // Speed.
 const playerHorizontalSpeed = 20.0;
@@ -83,24 +84,43 @@ const level2Button = document.getElementById('Level2-button');
 
 const keyStates =[];
 
+// State variables.
 let menuActive = true;
 let failScreenActive = false;
 let successScreenActive = false;
 let gameActive = false;
 let levelSelectScreenActive = true;
+let pauseMenuActive = false;
+let currentLevel = 'none';
 
-/* Game State Callbacks */
+/*** STATE MANAGEMENT CALLBACKS ***/
 
 /**
  * Callback functions used to display game screens
  * and control game state.
  */
 
-// Adjust menu color scheme for level.
+// Adjust menu color scheme for level 1.
 function setLevel1Colours(){
     gameMenu.style.color = '#FFFFFF';
     gameMenuButton.style.color = '#FFFFFF';
+    levelEscapePrompt.style.color = '#FFFFFF';
     document.getElementById('Menu-button-container').style.borderBottomColor = '#FFFFFF';
+}
+
+// Adjust menu color scheme for level 2.
+function setLevel2Colours(){
+    gameMenu.style.color = '#00008B';
+    gameMenuButton.style.color = '#00008B';
+    levelEscapePrompt.style.color = '#00008B';
+    document.getElementById('Menu-button-container').style.borderBottomColor = '#00008B';
+}
+
+// Adjust menu color scheme for level select.
+function setLevelSelectColours(){
+    gameMenu.style.color = '#000000';
+    gameMenuButton.style.color = '#000000';
+    document.getElementById('Menu-button-container').style.borderBottomColor = '#000000';
 }
 
 // Render level select screen.
@@ -119,30 +139,35 @@ function returnToLevelSelect(){
 
     clearGameState();
 
-    gameMenu.style.color = '#000000';
-    gameMenuButton.style.color = '#000000';
-    document.getElementById('Menu-button-container').style.borderBottomColor = '#000000';
-    scene.background = new THREE.Color(0xFFFFFF);
+    setLevelSelectColours();
 
+    deactivatePauseDetails();
     activateMenu();
     activateLevelSelect();
-
-    levelEscapePrompt.style.display = 'none';
-    gamePausedText.style.display = 'none';
 }
 
 // Start level 1 callback.
 function startLevel1(){
     setLevel1Colours();
-    deactivateLevelSelect();
 
-    if(menuActive == true){
-        deactivateMenu();
-    }
+    deactivateLevelSelect();
+    deactivateMenu();
 
     clearGameState();
     gameClock.start();
     initialiseLevel1();
+}
+
+// Start level 2 callback.
+function startLevel2(){
+    setLevel2Colours();
+
+    deactivateLevelSelect();
+    deactivateMenu();
+
+    clearGameState();
+    gameClock.start();
+    initialiseLevel2();
 }
 
 // Pause game callback.
@@ -150,8 +175,7 @@ function pauseGame(){
     if(gameActive == true && levelFailed == false && levelCleared == false && levelSelectScreenActive == false){
         gameActive = false;
         gameClock.stop();
-        gamePausedText.style.display = 'block';
-        levelEscapePrompt.style.display = 'block';
+        activatePauseDetails();
         activateMenu();
         console.log('game paused')
     }
@@ -163,8 +187,7 @@ function resumeGame(){
     if(gameActive == false && levelFailed == false && levelCleared == false && levelSelectScreenActive == false){
         gameActive = true;
         gameClock.start();
-        gamePausedText.style.display = 'none';
-        levelEscapePrompt.style.display = 'none';
+        deactivatePauseDetails();
         deactivateMenu();
         console.log('game resumed')
         animate();
@@ -187,7 +210,14 @@ function restartGame(){
 
     clearGameState();
     gameClock.start();
-    initialiseLevel1();
+
+    if(currentLevel == '1'){
+        initialiseLevel1();
+    } else if (currentLevel == '2'){
+        initialiseLevel2();
+    } else {
+        console.log('state error');
+    }
 }
 
 // Restart game sate
@@ -205,6 +235,8 @@ function clearGameState(){
     firstPerson = false;
     gameTimer = 0;
 }
+
+/* Display states. */
 
 // Menu.
 function activateMenu(){
@@ -254,6 +286,19 @@ function deactivateLevelSelect(){
     levelSelectPanel.style.display = 'none';
 }
 
+// Game paused.
+function activatePauseDetails(){
+    pauseMenuActive = true;
+    levelEscapePrompt.style.display = 'block';
+    gamePausedText.style.display = 'block';
+}
+
+function deactivatePauseDetails(){
+    pauseMenuActive = false;
+    levelEscapePrompt.style.display = 'none';
+    gamePausedText.style.display = 'none';
+}
+
 /*** WINDOW LISTENERS AND CALLBACKS ***/ 
 
 // Toggle game menu listener.
@@ -268,6 +313,11 @@ gameMenuButton.addEventListener('click', () => {
 // Start level 1 listener.
 level1Button.addEventListener('click', () => {
     startLevel1();
+})
+
+// Start level 2 listener.
+level2Button.addEventListener('click', () => {
+    startLevel2();
 })
 
 // Keyboard input listener.
@@ -317,16 +367,17 @@ function keyUp(event){
     keyStates[event.code] = false;
 }
 
-// Window resizing
+// Window resizing.
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 })
 
 /*** LEVEL INITIALISATION ***/
 
+// Level 1.
 async function initialiseLevel1(){
     console.log('drawing level 1')
-
+    currentLevel = '1';
     /* THREE JS Properties */
 
     // Define scene.
@@ -378,23 +429,60 @@ async function initialiseLevel1(){
     animate();
 }
 
-function level2(){
-    // Define sidewalk planes.
-    const sideWalkGeometry = new THREE.BoxGeometry(1, 750, 1.5);
+// Level 2.
+async function initialiseLevel2(){
+    console.log('drawing level 2')
+    currentLevel = '2'
+    /* THREE JS Properties */
 
-    // Concrete texture.
-    const concreteTexture = new THREE.TextureLoader().load('./assets/ConcreteTexture.jpg');
+    // Define scene.
+    scene.background = new THREE.Color(0xDBD3CE);
 
-    // Wrap texture.
-    concreteTexture.wrapS = THREE.RepeatWrapping;
-    concreteTexture.wrapT = THREE.RepeatWrapping;
-    concreteTexture.repeat.set(0.05, 20)
+    // Define camera and camera position.
+    const camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
+    camera.position.set(0, 5.75, 13);
 
-    const sidewalkMaterial = new THREE.MeshPhongMaterial({map: concreteTexture, side: THREE.DoubleSide});
-    const sidewalkLeft = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
-    const sidewalkRight = new THREE.Mesh(sideWalkGeometry, sidewalkMaterial);
+    // Define renderer.
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    camera_Global = camera;
+
+    /* Level Properties */
+
+    // Generate level.
+    const level2SceneObjects = await loadLevel2();
+    for(let item of level2SceneObjects){
+        scene.add(item);
+    }
+
+    /* Avatars */
+
+    // Player - Generate and add to scene 
+    const playerObject = await generatePlayer();
+
+    for(let item of playerObject.sceneObjects){
+        scene.add(item);
+    }
+
+    // Store in global variable.
+    playerObject_Global = playerObject;
+
+    // Enemy - Generate and add to scene.
+    const enemyObject = await generateEnemy();
+
+    for(let item of enemyObject.sceneObjects){
+        scene.add(item);
+    }
+
+    // Store in global variable
+    enemyObject_Global = enemyObject;
+
+    /* Set game to active. */
+    gameActive = true;
+
+    // Call animation loop.
+    animate();
 }
-
 
 /*** ANIMATION LOOP ***/
 function animate(){
