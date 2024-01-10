@@ -611,6 +611,7 @@ function updatePlayerPosition({playerMesh, delta}){
     headlights[0].position.x = playerMesh.position.x - 0.6;
     headlights[1].position.z = playerMesh.position.z - 3.5;
     headlights[1].position.x = playerMesh.position.x + 0.6;
+
 }
 
 /**

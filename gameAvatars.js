@@ -46,7 +46,7 @@ export function generatePlayer(){
             const headlights = [];
     
             /* Initial Position */
-            playerMesh.position.set(5.5, -1, 0);
+            playerMesh.position.set(0, -0.5, 0);
     
             // Bounding box.
             boundingBox.setFromObject(playerMesh);
