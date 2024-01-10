@@ -22,7 +22,7 @@ import { loadLevel1 } from './level1Loader';
 const canvas = document.getElementById("canvas");
 
 // Game renderer.
-const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
 
 // Scene.
 const scene = new THREE.Scene();
@@ -81,13 +81,13 @@ const gameMenuButton = document.getElementById('Menu-button');
 const level1Button = document.getElementById('Level1-button');
 const level2Button = document.getElementById('Level2-button');
 
-
 const keyStates =[];
 
 let menuActive = true;
 let failScreenActive = false;
 let successScreenActive = false;
 let gameActive = false;
+let levelSelectScreenActive = true;
 
 /* Game State Callbacks */
 
@@ -105,12 +105,28 @@ function setLevel1Colours(){
 
 // Render level select screen.
 function returnToLevelSelect(){
+    if(menuActive == true){
+        deactivateMenu();
+    }
+
+    if(failScreenActive == true){
+        deactivateFailScreen();
+    }
+
+    if(successScreenActive == true){
+        deactivateSuccessScreen();
+    }
+
     clearGameState();
+
     gameMenu.style.color = '#000000';
     gameMenuButton.style.color = '#000000';
     document.getElementById('Menu-button-container').style.borderBottomColor = '#000000';
+    scene.background = new THREE.Color(0xFFFFFF);
+
     activateMenu();
     activateLevelSelect();
+
     levelEscapePrompt.style.display = 'none';
     gamePausedText.style.display = 'none';
 }
@@ -123,32 +139,36 @@ function startLevel1(){
     if(menuActive == true){
         deactivateMenu();
     }
-    clearGameState();
 
-    gameActive = true;
+    clearGameState();
+    gameClock.start();
     initialiseLevel1();
 }
 
 // Pause game callback.
 function pauseGame(){
-    if(levelCleared){
-        console.log('no')
-        return;
-    } else {
+    if(gameActive == true && levelFailed == false && levelCleared == false && levelSelectScreenActive == false){
         gameActive = false;
         gameClock.stop();
         gamePausedText.style.display = 'block';
+        levelEscapePrompt.style.display = 'block';
         activateMenu();
+        console.log('game paused')
     }
 }
 
 // Resume game callback.
 function resumeGame(){
-    gameActive = true;
-    gameClock.start();
-    gamePausedText.style.display = 'none';
-    deactivateMenu();
-    animate();
+    console.log(`gameActive: ${gameActive}, levelfailed: ${levelFailed}, levelclearled: ${levelCleared}, level screen: ${levelSelectScreenActive}`)
+    if(gameActive == false && levelFailed == false && levelCleared == false && levelSelectScreenActive == false){
+        gameActive = true;
+        gameClock.start();
+        gamePausedText.style.display = 'none';
+        levelEscapePrompt.style.display = 'none';
+        deactivateMenu();
+        console.log('game resumed')
+        animate();
+    }
 }
 
 // Restart game callback.
@@ -163,14 +183,17 @@ function restartGame(){
     if(menuActive == true){
         deactivateMenu();
     }
+    console.log('restarting level')
 
     clearGameState();
-
+    gameClock.start();
     initialiseLevel1();
 }
 
 // Restart game sate
 function clearGameState(){
+    console.log('clearing game state')
+
     scene.clear();
     renderer.clear();
 
@@ -178,7 +201,7 @@ function clearGameState(){
     playerForwardSpeed = 30.0;
     levelFailed = false;
     levelCleared = false;
-    gameActive = true;
+    gameActive = false;
     firstPerson = false;
     gameTimer = 0;
 }
@@ -187,43 +210,47 @@ function clearGameState(){
 function activateMenu(){
     menuActive = true;
     gameMenu.style.display = 'block';
-    levelEscapePrompt.style.display = 'block';
 }
 
 function deactivateMenu(){
     menuActive = false;
     gameMenu.style.display = 'none';
-    levelEscapePrompt.style.display = 'none';
 }
 
 // Success screen.
 function activateSuccessScreen(){
     successScreenActive = true;
     gameCleared.style.display = 'block';
+    levelEscapePrompt.style.display = 'block';
 }
 
 function deactivateSuccessScreen(){
     successScreenActive = false;
     gameCleared.style.display = 'none';
+    levelEscapePrompt.style.display = 'none';
 }
 
 // Failure screen.
 function activateFailScreen(){
     failScreenActive = true;
     gameFailed.style.display = 'block';
+    levelEscapePrompt.style.display = 'block';
 }
 
 function deactivateFailScreen(){
     failScreenActive = false;
     gameFailed.style.display = 'none';
+    levelEscapePrompt.style.display = 'none';
 }
 
 // Level select panel.
 function activateLevelSelect(){
+    levelSelectScreenActive = true;
     levelSelectPanel.style.display = 'block';
 }
 
 function deactivateLevelSelect(){
+    levelSelectScreenActive = false;
     levelSelectPanel.style.display = 'none';
 }
 
@@ -263,14 +290,18 @@ function keyDown(event){
 
     // Restart game.
     if(event.code == 'KeyR'){
-        if(levelFailed || levelCleared){
+        if(levelFailed == true || levelCleared == true){
             restartGame();
         }
     }
 
     // Escape to level select.
     if(event.code == 'Escape'){
-        if(menuActive){
+        if(
+            (gameActive == false && levelCleared == true) || 
+            (gameActive == false && levelFailed == true) ||
+            (gameActive == false && menuActive == true && levelSelectScreenActive == false)
+            ){
             returnToLevelSelect();
         }
     }
@@ -286,9 +317,15 @@ function keyUp(event){
     keyStates[event.code] = false;
 }
 
+// Window resizing
+window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+})
+
 /*** LEVEL INITIALISATION ***/
 
 async function initialiseLevel1(){
+    console.log('drawing level 1')
 
     /* THREE JS Properties */
 
@@ -334,6 +371,9 @@ async function initialiseLevel1(){
     // Store in global variable
     enemyObject_Global = enemyObject;
 
+    /* Set game to active. */
+    gameActive = true;
+
     // Call animation loop.
     animate();
 }
@@ -358,12 +398,14 @@ function level2(){
 
 /*** ANIMATION LOOP ***/
 function animate(){
+
     // If game state is off, pause game.
     if(gameActive == false){
-        console.log('game paused')
-        console.log(gameActive)
+        console.log('animation block')
         return;
     } else {
+        console.log(`animating gameActive: ${gameActive}`)
+
         /* Animation variables */
 
         // Player mesh for local scope.
@@ -395,7 +437,6 @@ function animate(){
 
         // Update game timer after each frame.
         gameTimer++;
-
         requestAnimationFrame(animate);
         renderer.render(scene, camera_Global);
     }
@@ -416,6 +457,10 @@ function updatePlayerPosition({playerMesh, delta}){
     if(playerMesh.position.z < GAME_LENGTH){
         levelCleared = true;
         playerForwardSpeed = 10;
+        // Use game timer to define closing camera pan.
+        if(gameTimer % 60 == 0){
+            closeLevel();
+        }
     }
 
     // Move left.
@@ -540,12 +585,6 @@ function updateCameraPerspective({playerMesh, delta}){
         camera_Global.position.z += 6 * delta;
         camera_Global.position.x = 0;
         camera_Global.position.y += 4 * delta;
-
-        // Use game timer to define closing camera pan.
-        if(gameTimer % 480 == 0){
-            closeLevel()
-        }
-
     } else {
         if(firstPerson){
             // First person properties.
@@ -567,6 +606,8 @@ function updateCameraPerspective({playerMesh, delta}){
  */
 function closeLevel(){
     gameActive = false;
+    console.log('closing level');
+    gameClock.stop();
     activateSuccessScreen();
 }
 
@@ -574,7 +615,9 @@ function closeLevel(){
  * Callback used when detecting crash.
  */
 function crashHandler(){
+    console.log('collision')
     gameActive = false;
     levelFailed = true;
+    gameClock.stop();
     activateFailScreen();
 }
