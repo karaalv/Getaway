@@ -12,6 +12,7 @@ import * as THREE from 'three';
  * Import external game functions.
  */
 import { generateEnemy, generateHorizontalNPC, generateNPC, generateNPCWithPosition, generatePlayer } from './gameAvatars';
+import { generateDisplay } from './levelScreen';
 import { loadLevel1, getRetroPalmTree } from './level1Loader';
 import { getBuilding, getCloud, loadLevel2 } from './level2Loader';
 
@@ -46,7 +47,7 @@ const far = 200;
 let gameTimer = 0; 
 
 // Length.
-const GAME_LENGTH = -500;
+const GAME_LENGTH = -1000;
 
 // Boundary,
 let gameBoundary;
@@ -155,6 +156,7 @@ function returnToLevelSelect(){
     deactivatePauseDetails();
     activateMenu();
     activateLevelSelect();
+    initialiseDisplay();
 }
 
 // Start level 1 callback.
@@ -386,6 +388,34 @@ window.addEventListener('resize', () => {
 })
 
 /*** LEVEL INITIALISATION ***/
+// Level 0 - Level selector background.
+async function initialiseDisplay(){
+    // Define scene.
+    scene.background = new THREE.Color(0xD9D9D9);
+
+    // Define camera and camera position.
+    const camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
+    camera.position.set(0, 10, 20);
+
+    // Define renderer.
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    camera_Global = camera;
+
+    const displayMeshes = await generateDisplay();
+    for(let item of displayMeshes){
+        scene.add(item);
+    }
+
+    displayAnimation();
+}
+
+// Animation loop for display screen.
+function displayAnimation(){
+    requestAnimationFrame(displayAnimation);
+    renderer.render(scene, camera_Global);
+}
+
 
 // Level 1.
 async function initialiseLevel1(){
@@ -514,7 +544,9 @@ async function initialiseLevel2(){
     // Call animation loop.
     animate();
 }
-startLevel2()
+
+/* Entry POINT - Load display screen */
+initialiseDisplay();
 
 /*** ANIMATION LOOP ***/
 function animate(){
@@ -592,7 +624,7 @@ function updatePlayerPosition({playerMesh, delta}){
         levelCleared = true;
         playerForwardSpeed = 10;
         // Use game timer to define closing camera pan.
-        if(gameTimer % 60 == 0){
+        if(gameTimer % 540 == 0){
             closeLevel();
         }
     }
@@ -837,7 +869,7 @@ function crashHandler(){
  */
 async function garbageCollector({playerPositionZ}){
     scene.children.forEach((child) =>{
-        if((child.position.z > playerPositionZ + 50) || (child.position.z < playerPositionZ - 250) ){
+        if((child.position.z > playerPositionZ + 50) || (child.position.z < playerPositionZ - 225) ){
             if(child instanceof THREE.Group || child instanceof THREE.SpotLight || (child instanceof THREE.Mesh && child.material.color == 0xC7C4BF)){
                 scene.remove(child);
                 console.log('cleaned');

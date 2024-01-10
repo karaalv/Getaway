@@ -110,7 +110,7 @@ export function generateEnemy(){
 
             /* Initial Position */
 
-            enemyMesh.position.set(1.5, -1, 6.5);
+            enemyMesh.position.set(0, -1, 6.5);
 
             // Lights.
             leftHeadlight.position.set(enemyMesh.position.x - 0.5, 0.5, enemyMesh.position.z - 3);
