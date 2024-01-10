@@ -283,17 +283,17 @@ export function generateHorizontalNPC({position, playerPositionZ}) {
 
         /* Load NPC model */
         const loader = new GLTFLoader();
-        loader.load('./assets/models/NPCcar.glb', function (glb) {
+        loader.load('./assets/models/Plane.glb', function (glb) {
            const npcMesh = glb.scene;
 
            // Scale model.
-           npcMesh.scale.set(BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR);
+           npcMesh.scale.set(1.5, 1.5, 1.5);
 
             // Bounding box.
             const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
             // NPC speed - Random variable.
-            let speed = 3;
+            let speed = 5;
 
             // NPC position - Sine curve variation.
             let spawnPoint;

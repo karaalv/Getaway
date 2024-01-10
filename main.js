@@ -60,7 +60,6 @@ let npcSpawnRate;
 let horizontalNPCSpawnRate;
 let positionFrequency;
 const npcArray = [];
-const crossroadsNPCArray = [];
 
 // Environment.
 const environmentSpawnRate = 150;
@@ -459,7 +458,7 @@ async function initialiseLevel2(){
     currentLevel = '2';
     gameBoundary = 5.5;
     npcSpawnRate = 60;
-    horizontalNPCSpawnRate = 120;
+    horizontalNPCSpawnRate = 150;
     positionFrequency = 1;
 
     thirdPersonY = 6;
