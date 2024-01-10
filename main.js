@@ -11,7 +11,7 @@ import * as THREE from 'three';
 /**
  * Import external game functions.
  */
-import { generateEnemy, generateNPC, generateNPCWithPosition, generatePlayer } from './gameAvatars';
+import { generateEnemy, generateHorizontalNPC, generateNPC, generateNPCWithPosition, generatePlayer } from './gameAvatars';
 import { loadLevel1, getRetroPalmTree } from './level1Loader';
 import { getBuilding, getCloud, loadLevel2 } from './level2Loader';
 
@@ -57,14 +57,19 @@ let playerForwardSpeed = 30.0;
 
 // NPC behaviour.
 let npcSpawnRate;
+let horizontalNPCSpawnRate;
 let positionFrequency;
 const npcArray = [];
+const crossroadsNPCArray = [];
 
 // Environment.
 const environmentSpawnRate = 150;
 
 // Perspective.
 let firstPerson = false;
+let thirdPersonY;
+let firstPersonY;
+
 
 // Level completion.
 let levelCleared = false;
@@ -392,6 +397,9 @@ async function initialiseLevel1(){
     npcSpawnRate = 90;
     positionFrequency = 0.75;
 
+    thirdPersonY = 5.75;
+    firstPersonY = 1;
+
     /* THREE JS Properties */
 
     // Define scene.
@@ -450,8 +458,12 @@ async function initialiseLevel2(){
     /* Level conditions */
     currentLevel = '2';
     gameBoundary = 5.5;
-    npcSpawnRate = 90;
+    npcSpawnRate = 60;
+    horizontalNPCSpawnRate = 120;
     positionFrequency = 1;
+
+    thirdPersonY = 6;
+    firstPersonY = 1;
 
     /* THREE JS Properties */
 
@@ -540,7 +552,10 @@ function animate(){
                 if(currentLevel == '1'){
                     populateLevel1({playerMesh: playerMesh});
                 } else if (currentLevel == '2'){
-                    populateLevel2({playerMesh: playerMesh})
+                    populateLevel2({playerMesh: playerMesh});
+                    if(gameTimer % horizontalNPCSpawnRate == 0){
+                        getHorizontalNPC({playerMesh: playerMesh})
+                    }
                 }
             }
 
@@ -672,11 +687,15 @@ function updateEnvironment({delta, playerPositionX, playerPositionZ}){
                 npc.mesh = null;
             } else {
                 // NPC movement.
-                npc.mesh.position.z -= npc.speed * delta;
+                if(npc.horizontal == false){
+                    npc.mesh.position.z -= npc.speed * delta;
+                } else {
+                    npc.mesh.position.x -= npc.speed * delta;
+                }
                 // NPC collision.
                 npc.boundingBox.setFromObject(npc.mesh);
                 if(playerObject_Global.boundingBox.intersectsBox(npc.boundingBox)){
-                    // crashHandler();
+                    crashHandler();
                 }
             }
         }
@@ -740,6 +759,31 @@ async function populateLevel2({playerMesh}){
 }
 
 /**
+ * Callback used to add horizontal NPC to level
+ * 2.
+ * @param playerMesh
+ */
+async function getHorizontalNPC({playerMesh}){
+    const fraction = gameTimer / 60;
+    const radians = (Math.sqrt(3) / 2 ) * fraction;
+
+    const playerZ = playerMesh.position.z;
+    const positionProbability = Math.round(Math.sin(1 * radians));
+
+    let npc;
+
+    if(positionProbability > 0){
+        npc = await generateHorizontalNPC({position: 10, playerPositionZ: playerZ, isHorizontal: true});
+    } else {
+        npc = await generateHorizontalNPC({position: -10, playerPositionZ: playerZ, isHorizontal: true});
+    }
+
+    npcArray.push(npc);
+    scene.add(npc.mesh);
+}
+
+
+/**
  * Callback to toggle between first and third
  * person.
  * @param playerMesh 
@@ -755,10 +799,10 @@ function updateCameraPerspective({playerMesh, delta}){
             // First person properties.
             camera_Global.position.z = playerMesh.position.z - 0.5;
             camera_Global.position.x = playerMesh.position.x;
-            camera_Global.position.y = 0.5;
+            camera_Global.position.y = firstPersonY;
         } else {
             // Third person properties.
-            camera_Global.position.y = 5.75;
+            camera_Global.position.y = thirdPersonY;
             camera_Global.position.x = 0;
             camera_Global.position.z = playerMesh.position.z + 13;
         }

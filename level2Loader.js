@@ -59,7 +59,7 @@ export async function loadLevel2(){
     const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
     roadMesh.rotateX(Math.PI / 2);
     roadMesh.position.set(0, -1, ROAD_MIDDLE_POSITION);
-    meshArray.push(roadMesh)
+    meshArray.push(roadMesh);
 
     // Define sidewalk planes.
     const sideWalkGeometry = new THREE.BoxGeometry(1, ROAD_LENGTH, 1.5);

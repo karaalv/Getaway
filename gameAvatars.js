@@ -210,6 +210,7 @@ export function generateNPC({positionProbability, playerPositionZ}) {
             const npcObject = {
                 mesh: npcMesh,
                 speed: speed,
+                horizontal: false,
                 boundingBox: boundingBox,
             };
 
@@ -219,7 +220,8 @@ export function generateNPC({positionProbability, playerPositionZ}) {
 }
 
 /**
- * Function used to generate NPC avatar.
+ * Function used to generate NPC avatar with 
+ * specified position.
  * @param position
  * @param playerPositionZ
  * @returns NPC object data
@@ -246,21 +248,76 @@ export function generateNPCWithPosition({position, playerPositionZ}) {
             let spawnPoint;
 
             if (position == -5.5 || position == 5.5) {
+
                 speed *= 2.5;
                 spawnPoint = playerPositionZ + 50
-            } else {
+
+            } else if (position == -1.5 || position == 1.5){
+
                 speed *= -1;
                 spawnPoint = playerPositionZ - 150 
-                npcMesh.rotateY(Math.PI)
-            }
+                npcMesh.rotateY(Math.PI);
 
-            // Set NPC position.
+            } 
+
             npcMesh.position.set(position, -1, spawnPoint);
+
+            // Bounding box.
             boundingBox.setFromObject(npcMesh);
 
             const npcObject = {
                 mesh: npcMesh,
                 speed: speed,
+                horizontal: false,
+                boundingBox: boundingBox,
+            };
+
+            resolve(npcObject);
+        });
+    });
+}
+
+export function generateHorizontalNPC({position, playerPositionZ}) {
+    // Handle asynchronous loading.
+    return new Promise((resolve, reject) => {
+
+        /* Load NPC model */
+        const loader = new GLTFLoader();
+        loader.load('./assets/models/NPCcar.glb', function (glb) {
+           const npcMesh = glb.scene;
+
+           // Scale model.
+           npcMesh.scale.set(BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR, BLENDER_SCALE_FACTOR);
+
+            // Bounding box.
+            const boundingBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+
+            // NPC speed - Random variable.
+            let speed = 3;
+
+            // NPC position - Sine curve variation.
+            let spawnPoint;
+
+            if (position == 10) {
+                spawnPoint = playerPositionZ - 150;
+                npcMesh.rotateY(Math.PI / 2)
+
+            } else if (position == -10){
+                spawnPoint = playerPositionZ - 150;
+                speed *= -1;
+                npcMesh.rotateY(-Math.PI / 2)
+
+            }
+
+            npcMesh.position.set(position, 0.25, spawnPoint);
+
+            // Bounding box.
+            boundingBox.setFromObject(npcMesh);
+
+            const npcObject = {
+                mesh: npcMesh,
+                speed: speed,
+                horizontal: true,
                 boundingBox: boundingBox,
             };
 
