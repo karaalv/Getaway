@@ -391,10 +391,11 @@ window.addEventListener('resize', () => {
 // Level 0 - Level selector background.
 async function initialiseDisplay(){
     // Define scene.
-    scene.background = new THREE.Color(0xD9D9D9);
+  
+    scene.background = new THREE.Color(0x87CEEB);
 
     // Define camera and camera position.
-    const camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
+    const camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, 500);
     camera.position.set(0, 10, 20);
 
     // Define renderer.
