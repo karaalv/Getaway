@@ -41,6 +41,11 @@ const aspectRatio = window.innerWidth / window.innerHeight;
 const near = 0.1;
 const far = 200;
 
+// Audio.
+const listener = new THREE.AudioListener();
+const backgroundTrack = new THREE.Audio(listener);
+const policeSirenAudio = new THREE.Audio(listener);
+
 /* Game Properties */
 
 // Time.
@@ -190,6 +195,8 @@ function pauseGame(){
         gameClock.stop();
         activatePauseDetails();
         activateMenu();
+        policeSirenAudio.pause();
+        backgroundTrack.pause();
         console.log('game paused')
     }
 }
@@ -202,6 +209,8 @@ function resumeGame(){
         gameClock.start();
         deactivatePauseDetails();
         deactivateMenu();
+        policeSirenAudio.play();
+        backgroundTrack.play();
         console.log('game resumed')
         animate();
     }
@@ -408,6 +417,16 @@ async function initialiseDisplay(){
         scene.add(item);
     }
 
+    // Play background track.
+    camera.add(listener);
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load( './assets/audio/getaway.mp3', function( buffer ) {
+        backgroundTrack.setBuffer( buffer );
+        backgroundTrack.setLoop( true );
+        backgroundTrack.setVolume( 0.2 );
+        backgroundTrack.play();
+    });
+
     displayAnimation();
 }
 
@@ -476,6 +495,16 @@ async function initialiseLevel1(){
 
     /* Set game to active. */
     gameActive = true;
+
+    // Play police siren audio.
+    camera.add(listener);
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load( './assets/audio/policeSiren.mp3', function( buffer ) {
+        policeSirenAudio.setBuffer( buffer );
+        policeSirenAudio.setLoop( true );
+        policeSirenAudio.setVolume( 0.3 );
+        policeSirenAudio.play();
+    });
 
     // Call animation loop.
     animate();
@@ -849,6 +878,7 @@ function closeLevel(){
     gameActive = false;
     console.log('closing level');
     gameClock.stop();
+    policeSirenAudio.stop();
     activateSuccessScreen();
 }
 
@@ -859,7 +889,7 @@ function crashHandler(){
     console.log('collision')
     gameActive = false;
     levelFailed = true;
-    gameClock.stop();
+    policeSirenAudio.pause();
     activateFailScreen();
 }
 
