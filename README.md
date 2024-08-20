@@ -1,5 +1,5 @@
 # CS324 Coursework: Getaway
-## Alvin Karanja u2156001
+## Alvin Karanja
 
 This codebase contains the game **Getaway**, a THREE.js project that runs on<br>
 the browser.
