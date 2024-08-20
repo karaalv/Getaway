@@ -114,3 +114,14 @@ body {
     color: #000000;
     opacity: 0.7;
 }
+
+#Toggle-audio-button {
+    background-color: transparent;
+    font-weight: 800;
+    border: 2px solid #000000;
+}
+
+#Toggle-audio-button:hover {
+    opacity: 0.5;
+    cursor: pointer;
+}

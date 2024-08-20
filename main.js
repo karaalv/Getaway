@@ -42,9 +42,11 @@ const near = 0.1;
 const far = 200;
 
 // Audio.
+let audioToggle = true;
 const listener = new THREE.AudioListener();
 const backgroundTrack = new THREE.Audio(listener);
 const policeSirenAudio = new THREE.Audio(listener);
+const carAccelerationAudio = new THREE.Audio(listener);
 
 /* Game Properties */
 
@@ -97,6 +99,7 @@ const levelEscapePrompt = document.getElementById('Level-escape');
 const gameMenuButton = document.getElementById('Menu-button');
 const level1Button = document.getElementById('Level1-button');
 const level2Button = document.getElementById('Level2-button');
+const toggleAudioButton = document.getElementById('Toggle-audio-button');
 
 const keyStates =[];
 
@@ -156,6 +159,15 @@ function returnToLevelSelect(){
     clearGameState();
     currentLevel = 'none';
 
+    // Clear audio.
+    if(policeSirenAudio.isPlaying){
+        policeSirenAudio.stop()
+    }
+
+    if(carAccelerationAudio.isPlaying){
+        carAccelerationAudio.stop();
+    }
+
     setLevelSelectColours();
 
     deactivatePauseDetails();
@@ -197,6 +209,7 @@ function pauseGame(){
         activateMenu();
         policeSirenAudio.pause();
         backgroundTrack.pause();
+        carAccelerationAudio.pause();
         console.log('game paused')
     }
 }
@@ -211,6 +224,7 @@ function resumeGame(){
         deactivateMenu();
         policeSirenAudio.play();
         backgroundTrack.play();
+        carAccelerationAudio.play();
         console.log('game resumed')
         animate();
     }
@@ -259,6 +273,8 @@ function clearGameState(){
     firstPerson = false;
     gameTimer = 0;
 }
+
+// Toggle background music.
 
 /* Display states. */
 
@@ -342,6 +358,17 @@ level1Button.addEventListener('click', () => {
 // Start level 2 listener.
 level2Button.addEventListener('click', () => {
     startLevel2();
+})
+
+// Audio toggle.
+toggleAudioButton.addEventListener('click',  () => {
+    audioToggle = ! audioToggle;
+
+    if(audioToggle){
+        backgroundTrack.play();
+    } else {
+        backgroundTrack.stop();
+    }
 })
 
 // Keyboard input listener.
@@ -504,6 +531,14 @@ async function initialiseLevel1(){
         policeSirenAudio.setLoop( true );
         policeSirenAudio.setVolume( 0.3 );
         policeSirenAudio.play();
+    });
+
+    // Play car audio.
+    audioLoader.load( './assets/audio/carAcceleration.mp3', function( buffer ) {
+        carAccelerationAudio.setBuffer( buffer );
+        carAccelerationAudio.setLoop( true );
+        carAccelerationAudio.setVolume( 0.1 );
+        carAccelerationAudio.play();
     });
 
     // Call animation loop.
@@ -879,6 +914,7 @@ function closeLevel(){
     console.log('closing level');
     gameClock.stop();
     policeSirenAudio.stop();
+    carAccelerationAudio.stop();
     activateSuccessScreen();
 }
 
@@ -890,6 +926,7 @@ function crashHandler(){
     gameActive = false;
     levelFailed = true;
     policeSirenAudio.pause();
+    carAccelerationAudio.pause();
     activateFailScreen();
 }
 
