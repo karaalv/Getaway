@@ -5,8 +5,8 @@ This codebase contains the game **Getaway**, a THREE.js project that runs on<br>
 the browser.
 
 ### Dependencies
-All relevant dependencies are contained within the project folder, specifically<br>
-within the 'node_modules' folder, this is for ease of deployment for submission.
+In order to run this project, assure dependencies are installed:
+~$`npm install`
 
 All relevant versions of dependencies are noted in the 'package.json' file. of<br>
 note this project uses:<br>
